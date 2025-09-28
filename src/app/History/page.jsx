@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { auth, db } from "../../../firebase";
 import {
   collection,
-  getDocs,
+  onSnapshot,
   doc,
   deleteDoc,
   writeBatch,
@@ -24,13 +24,13 @@ export default function HistoryPage() {
     return () => unsubscribe();
   }, []);
 
-  // 🔹 History olish
+  // 🔹 Real-time history olish
   useEffect(() => {
-    const fetchHistory = async () => {
-      if (!user) return;
-      const ref = collection(db, "users", user.uid, "history");
-      const snapshot = await getDocs(ref);
+    if (!user) return;
 
+    const ref = collection(db, "users", user.uid, "history");
+
+    const unsubscribe = onSnapshot(ref, (snapshot) => {
       const movies = snapshot.docs.map((docSnap) => ({
         id: docSnap.id,
         ...docSnap.data(),
@@ -39,13 +39,13 @@ export default function HistoryPage() {
       setHistory(
         movies.sort(
           (a, b) =>
-            (b.watchedAt?.toDate?.() || new Date()) -
-            (a.watchedAt?.toDate?.() || new Date())
+            (b.watchedAt?.toDate?.() || 0) -
+            (a.watchedAt?.toDate?.() || 0)
         )
       );
-    };
+    });
 
-    fetchHistory();
+    return () => unsubscribe();
   }, [user]);
 
   // 🔹 Bitta o‘chirish
@@ -53,7 +53,6 @@ export default function HistoryPage() {
     if (!user) return;
     const ref = doc(db, "users", user.uid, "history", id);
     await deleteDoc(ref);
-    setHistory((prev) => prev.filter((movie) => movie.id !== id));
   };
 
   // 🔹 Hammasini o‘chirish
@@ -68,7 +67,6 @@ export default function HistoryPage() {
     });
 
     await batch.commit();
-    setHistory([]);
   };
 
   if (!user)
@@ -108,7 +106,6 @@ export default function HistoryPage() {
               key={movie.id}
               className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-transform hover:scale-105"
             >
-              {/* Poster */}
               {movie.poster && (
                 <img
                   src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
@@ -116,8 +113,6 @@ export default function HistoryPage() {
                   className="w-full h-72 object-cover rounded-2xl"
                 />
               )}
-
-              {/* Overlay hover */}
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button
                   onClick={() => handleDelete(movie.id)}
