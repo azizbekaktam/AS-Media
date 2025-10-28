@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import BackButton from "@/app/components/BackButton";
 import Spinder from "@/app/components/Spinder";
 import LikeButton from "@/app/components/LikeButton";
@@ -8,7 +9,6 @@ import axios from "axios";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { FaStar } from "react-icons/fa";
-
 import { auth, db } from "../../../../firebase";
 import { doc, setDoc } from "firebase/firestore";
 
@@ -18,7 +18,6 @@ export default function MovieDetail({ token }) {
   const [trailer, setTrailer] = useState(null);
   const [user, setUser] = useState(null);
 
-  // 👤 Userni olish
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
@@ -26,7 +25,6 @@ export default function MovieDetail({ token }) {
     return () => unsubscribe();
   }, []);
 
-  // 🎬 Movie fetch + History-ga yozish
   useEffect(() => {
     const fetchMovie = async () => {
       try {
@@ -36,7 +34,6 @@ export default function MovieDetail({ token }) {
         const movieData = { ...movieRes.data, type: "movie" };
         setMovie(movieData);
 
-        // History-ga yozish
         if (user) {
           const ref = doc(db, "users", user.uid, "history", String(movieData.id));
           await setDoc(ref, {
@@ -48,7 +45,6 @@ export default function MovieDetail({ token }) {
           });
         }
 
-        // Trailer fetch
         const videoRes = await axios.get(
           `${process.env.NEXT_PUBLIC_Project_TmdApi_Api}/movie/${id}/videos?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&language=en-US`
         );
@@ -66,51 +62,66 @@ export default function MovieDetail({ token }) {
 
   if (!movie)
     return (
-      <p className="text-white p-6">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
         <Spinder />
-      </p>
+      </div>
     );
 
   const { poster_path, title, release_date, vote_average, overview } = movie;
 
   return (
-    <main className="bg-gray-100 text-gray-900 dark:bg-black dark:text-white min-h-screen p-6 transition-colors">
+    <main className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white px-6 py-10">
       <BackButton />
-      <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-8 mt-6">
-        <img
+
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="max-w-6xl mx-auto flex flex-col md:flex-row gap-10 mt-8"
+      >
+        <motion.img
           src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}${poster_path}`}
           alt={title}
-          className="rounded-lg shadow-lg w-full md:w-[300px] object-cover"
+          className="rounded-2xl shadow-2xl w-full md:w-[350px] object-cover hover:scale-105 transition-transform duration-300"
+          whileHover={{ scale: 1.05 }}
         />
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold">{title}</h1>
-          <p className="text-gray-600 dark:text-gray-400">{release_date}</p>
-          <p className="mt-4 leading-relaxed">{overview}</p>
-          <p className="mt-4 text-yellow-500 font-semibold flex items-center gap-2">
-            <FaStar /> Rating: {vote_average} / 10
-          </p>
 
-          {/* 🔘 Tugmalar */}
-          <LikeButton movie={movie} token={token} />
-          <WatchlistButton movie={movie} />
+        <div className="flex-1 bg-white/5 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-white/10">
+          <h1 className="text-4xl font-extrabold mb-3 text-yellow-400">{title}</h1>
+          <p className="text-gray-300 text-sm mb-2">{release_date}</p>
+          <p className="text-gray-200 leading-relaxed">{overview}</p>
 
-          {trailer && (
-            <div className="mt-6">
-              <h2 className="text-xl font-semibold mb-2">🎬 Trailer</h2>
-              <div className="aspect-video rounded-lg overflow-hidden shadow-md">
-                <iframe
-                  src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Trailer}/embed/${trailer.key}`}
-                  title="YouTube video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full"
-                ></iframe>
-              </div>
-            </div>
-          )}
+          <div className="flex items-center gap-2 mt-4 text-yellow-400 font-semibold">
+            <FaStar /> {vote_average?.toFixed(1)} / 10
+          </div>
+
+          <div className="flex items-center gap-4 mt-6">
+            <LikeButton movie={movie} token={token} />
+            <WatchlistButton movie={movie} />
+          </div>
         </div>
-      </div>
+      </motion.div>
+
+      {trailer && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          className="max-w-5xl mx-auto mt-10"
+        >
+          <h2 className="text-2xl font-semibold mb-3 text-center text-yellow-400">🎬 Trailer</h2>
+          <div className="aspect-video rounded-2xl overflow-hidden shadow-xl border border-white/10">
+            <iframe
+              src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Trailer}/embed/${trailer.key}`}
+              title="YouTube trailer"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            ></iframe>
+          </div>
+        </motion.div>
+      )}
     </main>
   );
 }

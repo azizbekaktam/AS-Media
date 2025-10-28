@@ -5,17 +5,19 @@ import { useParams } from "next/navigation";
 import BackButton from "@/app/components/BackButton";
 import Spinder from "@/app/components/Spinder";
 import LikeButton from "@/app/components/LikeButton";
-import { FaStar } from "react-icons/fa";
 import WatchlistButton from "@/app/components/Watchlist";
-import {  db } from "../../../../firebase";
+import { db } from "../../../../firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { FaStar } from "react-icons/fa";
+import { motion } from "framer-motion";
 
 export default function CartoonDetail({ token }) {
   const { id } = useParams();
-  const [cartoon, setCartoon] = useState([]);
+  const [cartoon, setCartoon] = useState(null);
   const [trailerKey, setTrailerKey] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // 🔹 Cartoon va Trailer fetch
+  // 🔹 Fetch movie & trailer
   useEffect(() => {
     async function fetchCartoon() {
       try {
@@ -25,7 +27,7 @@ export default function CartoonDetail({ token }) {
         const data = await res.json();
         setCartoon({ ...data, type: "multfilm" });
 
-        // 🔹 Firestore-ga "history" sifatida saqlash
+        // 🔹 Save to history
         if (token && data) {
           const historyRef = collection(db, "users", token, "history");
           await addDoc(historyRef, {
@@ -38,6 +40,8 @@ export default function CartoonDetail({ token }) {
         }
       } catch (error) {
         console.error("Error fetching cartoon:", error);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -62,67 +66,82 @@ export default function CartoonDetail({ token }) {
     }
   }, [id, token]);
 
-  if (!cartoon)
+  if (loading || !cartoon)
     return (
-      <p className="text-center mt-10">
+      <div className="flex justify-center mt-20">
         <Spinder />
-      </p>
+      </div>
     );
 
   const { poster_path, title, release_date, vote_average, overview } = cartoon;
 
   return (
-    <main className="bg-gradient-to-b from-gray-50 to-white min-h-screen p-8">
-      <BackButton />
+    <main className="min-h-screen bg-gradient-to-b from-amber-100 via-white to-yellow-50 text-gray-900 px-6 py-10">
+      <div className="max-w-6xl mx-auto">
+        <BackButton />
 
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-10 mt-10">
-        <div className="flex-shrink-0">
-          <img
-            src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}${poster_path}`}
-            alt={title}
-            className="rounded-2xl shadow-xl w-full md:w-[320px] object-cover transition-transform duration-300 hover:scale-105"
-          />
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="flex flex-col md:flex-row gap-10 mt-10"
+        >
+          {/* Poster */}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="w-full md:w-[320px] overflow-hidden rounded-2xl shadow-lg bg-white"
+          >
+            <img
+              src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}${poster_path}`}
+              alt={title}
+              className="w-full h-[480px] object-cover"
+            />
+          </motion.div>
 
-        <div className="flex-1">
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-            {title}
-          </h1>
-          <p className="text-lg text-gray-500 mt-1">{release_date}</p>
-          <p className="mt-6 text-gray-700 leading-relaxed text-lg">
-            {overview}
-          </p>
-
-          <div className="mt-6 flex items-center gap-2">
-            <span className="text-yellow-500 text-2xl">
-              <FaStar />
-            </span>
-            <span className="text-lg font-semibold text-gray-800">
-              {vote_average} / 10
-            </span>
-          </div>
-
-          <LikeButton movie={cartoon} />
-          <WatchlistButton movie={cartoon} />
-
-          {trailerKey && (
-            <div className="mt-10">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                🎬 Trailer
-              </h2>
-              <div className="aspect-video rounded-xl overflow-hidden shadow-lg border border-gray-200">
-                <iframe
-                  src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Trailer}/embed/${trailerKey}`}
-                  title="YouTube video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full"
-                ></iframe>
-              </div>
+          {/* Info */}
+          <div className="flex-1 space-y-6">
+            <div>
+              <h1 className="text-4xl font-extrabold tracking-tight">{title}</h1>
+              <p className="text-gray-500 text-lg mt-1">{release_date}</p>
             </div>
-          )}
-        </div>
+
+            <p className="text-lg text-gray-700 leading-relaxed">{overview}</p>
+
+            <div className="flex items-center gap-3 text-xl font-semibold">
+              <FaStar className="text-yellow-500" />
+              <span>{vote_average?.toFixed(1)} / 10</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 mt-4">
+              <LikeButton movie={cartoon} />
+              <WatchlistButton movie={cartoon} />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Trailer */}
+        {trailerKey && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7 }}
+            className="mt-14"
+          >
+            <h2 className="text-3xl font-bold mb-4 flex items-center gap-2">
+              🎬 Trailer
+            </h2>
+            <div className="rounded-xl overflow-hidden shadow-xl border border-gray-200">
+              <iframe
+                src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Trailer}/embed/${trailerKey}`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-[450px]"
+              ></iframe>
+            </div>
+          </motion.div>
+        )}
       </div>
     </main>
   );

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Spinder from "../components/Spinder";
 import Slider from "../components/Slider";
+import { motion } from "framer-motion";
 import { HiOutlineChevronDoubleLeft, HiOutlineChevronDoubleRight } from "react-icons/hi";
 import { FaRegCalendarAlt } from "react-icons/fa";
 import { MdMovie } from "react-icons/md";
@@ -16,26 +17,25 @@ export default function MoviesPage() {
   const [movies, setMovies] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState([]); // genres
-  const [selectedCategory, setSelectedCategory] = useState(null); // default: null = barcha
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // Filtr qilinadigan IDlar
   const blockedIds = [
     1280461, 715287, 611251, 259872, 1211373, 1506456, 1365103, 993236, 1127648,
     226674, 1470086, 641284, 147714, 460229, 1476292, 1140142, 1529510, 82023,
     86767, 1212337, 1234720, 1252309, 1501238, 1357459, 1241752,
   ];
 
-  // URL parametrlardan page va category olish
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const currentPage = parseInt(params.get("page")) || 1;
-    const currentCategory = params.get("category") ? parseInt(params.get("category")) : null;
+    const currentCategory = params.get("category")
+      ? parseInt(params.get("category"))
+      : null;
     setPage(currentPage);
     setSelectedCategory(currentCategory);
   }, []);
 
-  // Genres ro‘yxatini olish
   useEffect(() => {
     async function fetchGenres() {
       try {
@@ -51,7 +51,6 @@ export default function MoviesPage() {
     fetchGenres();
   }, []);
 
-  // Filmlar olish
   useEffect(() => {
     async function fetchMovies() {
       try {
@@ -90,25 +89,30 @@ export default function MoviesPage() {
   if (loading) return <Spinder />;
 
   return (
-    <main className="min-h-screen p-6 bg-gray-50">
+    <main className="min-h-screen bg-gradient-to-b from-[#0f0f0f] via-[#151515] to-[#0a0a0a] text-white">
       <Navbar />
       <Slider />
 
-      <h1 className="text-center text-3xl font-bold mb-6 flex items-center justify-center gap-2">
-        <MdMovie /> Kinolar ({page}/{totalPages})
-      </h1>
+      {/* Title */}
+      <motion.h1
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center text-3xl font-extrabold mt-8 mb-6 flex items-center justify-center gap-2 text-yellow-400"
+      >
+        <MdMovie className="text-yellow-400" /> Kinolar ({page}/{totalPages})
+      </motion.h1>
 
       {/* Categories */}
-      <div className="flex flex-wrap gap-3 justify-center mb-8">
+      <div className="flex flex-wrap gap-3 justify-center mb-10">
         <button
           onClick={() => {
             setSelectedCategory(null);
             setPage(1);
           }}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+          className={`px-4 py-2 rounded-full text-sm font-medium transition ${
             selectedCategory === null
-              ? "bg-yellow-400 text-black shadow-md"
-              : "bg-gray-200 hover:bg-yellow-200"
+              ? "bg-yellow-400 text-black shadow-lg"
+              : "bg-[#222] hover:bg-yellow-400 hover:text-black"
           }`}
         >
           Barchasi
@@ -119,12 +123,12 @@ export default function MoviesPage() {
             key={cat.id}
             onClick={() => {
               setSelectedCategory(cat.id);
-              setPage(1); // category o‘zgarsa 1-sahifadan boshlanadi
+              setPage(1);
             }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
               selectedCategory === cat.id
-                ? "bg-yellow-400 text-black shadow-md"
-                : "bg-gray-200 hover:bg-yellow-200"
+                ? "bg-yellow-400 text-black shadow-lg"
+                : "bg-[#222] hover:bg-yellow-400 hover:text-black"
             }`}
           >
             {cat.name}
@@ -133,50 +137,57 @@ export default function MoviesPage() {
       </div>
 
       {/* Movies Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+      <motion.div
+        layout
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 px-6"
+      >
         {movies.length > 0 ? (
           movies.map((m) => (
-            <Link
+            <motion.div
               key={m.id}
-              href={`/Movies/${m.id}`}
-              className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition transform hover:-translate-y-1"
+              whileHover={{ scale: 1.05 }}
+              className="group relative bg-[#1a1a1a]/70 backdrop-blur-md rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition"
             >
-              <img
-                src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}/t/p/w500${m.poster_path}`}
-                alt={m.title}
-                className="w-full h-72 object-cover"
-              />
-              <div className="p-2">
-                <h2 className="font-semibold truncate">{m.title}</h2>
-                <p className="text-sm text-gray-500 flex items-center gap-1">
-                  <FaRegCalendarAlt /> {m.release_date}
-                </p>
-              </div>
-            </Link>
+              <Link href={`/Movies/${m.id}`}>
+                <img
+                  src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}/t/p/w500${m.poster_path}`}
+                  alt={m.title}
+                  className="w-full h-80 object-cover group-hover:opacity-80 transition duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-3">
+                  <h2 className="font-semibold text-lg text-yellow-400 truncate">
+                    {m.title}
+                  </h2>
+                  <p className="text-xs text-gray-300 flex items-center gap-1">
+                    <FaRegCalendarAlt /> {m.release_date}
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
           ))
         ) : (
-          <p className="text-center col-span-full text-gray-500">
+          <p className="text-center col-span-full text-gray-400">
             Kinolar topilmadi
           </p>
         )}
-      </div>
+      </motion.div>
 
       {/* Pagination */}
-      <div className="flex justify-center items-center gap-4 mt-8">
+      <div className="flex justify-center items-center gap-4 mt-10 pb-10">
         <button
           onClick={prevPage}
           disabled={page === 1}
-          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          className="px-4 py-2 bg-[#222] rounded-full disabled:opacity-40 hover:bg-yellow-400 hover:text-black transition"
         >
           <HiOutlineChevronDoubleLeft />
         </button>
-        <span>
+        <span className="text-yellow-400 font-semibold">
           {page} / {totalPages}
         </span>
         <button
           onClick={nextPage}
           disabled={page === totalPages}
-          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          className="px-4 py-2 bg-[#222] rounded-full disabled:opacity-40 hover:bg-yellow-400 hover:text-black transition"
         >
           <HiOutlineChevronDoubleRight />
         </button>
