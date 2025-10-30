@@ -17,11 +17,9 @@ export default function UserProfile() {
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        const refDoc = doc(db, "users", currentUser.uid);
-        const snap = await getDoc(refDoc);
-        if (snap.exists()) {
-          setUserData(snap.data());
-        }
+        const userDoc = doc(db, "users", currentUser.uid);
+        const snap = await getDoc(userDoc);
+        if (snap.exists()) setUserData(snap.data());
       } else {
         setUserData(null);
       }
@@ -29,7 +27,7 @@ export default function UserProfile() {
     return () => unsubscribe();
   }, []);
 
-  // close on outside click
+  // Tashqariga bosilganda yoki ESC bosilganda yopish
   useEffect(() => {
     function handleClick(e) {
       if (open && ref.current && !ref.current.contains(e.target)) {
@@ -49,7 +47,11 @@ export default function UserProfile() {
 
   if (!user) return null;
 
-  const displayName = userData?.name || user.email.split("@")[0] || "No Name";
+  const displayName =
+    userData?.name ||
+    user?.email?.split("@")[0] ||
+    "User";
+
   const createdAt = userData?.createdAt
     ? new Date(userData.createdAt).toLocaleString()
     : "Unknown";
@@ -59,7 +61,7 @@ export default function UserProfile() {
       {/* Avatar */}
       <button
         onClick={() => setOpen((p) => !p)}
-        className="w-10 h-10 rounded-full overflow-hidden border-2 border-yellow-500 shadow-md cursor-pointer hover:scale-105 transition-transform focus:outline-none"
+        className="w-10 h-10 rounded-full overflow-hidden border-2 border-yellow-500 shadow-lg cursor-pointer hover:scale-105 transition-transform focus:outline-none"
         aria-expanded={open}
         aria-label="Open profile menu"
       >
@@ -79,9 +81,10 @@ export default function UserProfile() {
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute right-0 mt-3 w-80 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-5 z-60 animate-fadeIn space-y-4"
+          className="absolute right-0 mt-3 w-80 bg-white/90 dark:bg-gray-900/95 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-5 z-50 backdrop-blur-md animate-fadeIn space-y-4"
           role="menu"
         >
+          {/* Avatar preview */}
           <div className="flex justify-center">
             {userData?.photoURL ? (
               <img
@@ -96,39 +99,42 @@ export default function UserProfile() {
             )}
           </div>
 
+          {/* User info */}
           <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-sm text-center">
             <h2 className="text-lg font-semibold">{displayName}</h2>
-            <p className="text-xs text-gray-500">{user.email}</p>
+            <p className="text-xs text-gray-500">{user?.email}</p>
           </div>
 
+          {/* User stats */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-sm text-center">
               <div className="text-xs text-gray-500">Plan</div>
-              <div className="mt-1 text-sm font-medium">
-                {userData?.plan ? userData.plan.toUpperCase() : "FREE"}
+              <div className="mt-1 text-sm font-medium text-yellow-500">
+                {userData?.plan?.toUpperCase() || "FREE"}
               </div>
             </div>
 
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-sm text-center">
               <div className="text-xs text-gray-500">Role</div>
-              <div className="mt-1 text-sm font-medium">
-                {userData?.role ? userData.role.toUpperCase() : "USER"}
+              <div className="mt-1 text-sm font-medium text-yellow-500">
+                {userData?.role?.toUpperCase() || "USER"}
               </div>
             </div>
 
             <div className="col-span-2 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-sm text-center">
               <div className="text-xs text-gray-500">Joined</div>
-              <div className="mt-1 text-xs">{createdAt}</div>
+              <div className="mt-1 text-xs text-gray-400">{createdAt}</div>
             </div>
           </div>
 
+          {/* Buttons */}
           <div className="flex gap-3">
             <button
               onClick={() => {
                 setOpen(false);
                 router.push("/profile");
               }}
-              className="flex-1 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:scale-105 transition"
+              className="flex-1 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:scale-105 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
             >
               Profile
             </button>
@@ -138,7 +144,7 @@ export default function UserProfile() {
                 setOpen(false);
                 router.push("/history");
               }}
-              className="flex-1 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:scale-105 transition"
+              className="flex-1 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:scale-105 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
             >
               History
             </button>

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
-
 import Slider from "../components/Slider";
 import { motion } from "framer-motion";
 import { HiOutlineChevronDoubleLeft, HiOutlineChevronDoubleRight } from "react-icons/hi";
@@ -86,9 +85,8 @@ export default function MoviesPage() {
   const prevPage = () => setPage((p) => Math.max(p - 1, 1));
   const nextPage = () => setPage((p) => Math.min(p + 1, totalPages));
 
-
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#0f0f0f] via-[#151515] to-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-gradient-to-b from-zinc-900 via-zinc-950 to-black text-white">
       <Navbar />
       <Slider />
 
@@ -96,22 +94,22 @@ export default function MoviesPage() {
       <motion.h1
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center text-3xl font-extrabold mt-8 mb-6 flex items-center justify-center gap-2 text-yellow-400"
+        className="text-center text-4xl font-extrabold mt-10 mb-6 flex items-center justify-center gap-2 text-yellow-400"
       >
-        <MdMovie className="text-yellow-400" /> Kinolar ({page}/{totalPages})
+        <MdMovie className="text-yellow-400 text-5xl" /> Kinolar
       </motion.h1>
 
       {/* Categories */}
-      <div className="flex flex-wrap gap-3 justify-center mb-10">
+      <div className="flex flex-wrap gap-3 justify-center mb-12 px-4">
         <button
           onClick={() => {
             setSelectedCategory(null);
             setPage(1);
           }}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+          className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
             selectedCategory === null
               ? "bg-yellow-400 text-black shadow-lg"
-              : "bg-[#222] hover:bg-yellow-400 hover:text-black"
+              : "bg-white/5 hover:bg-yellow-400 hover:text-black"
           }`}
         >
           Barchasi
@@ -124,10 +122,10 @@ export default function MoviesPage() {
               setSelectedCategory(cat.id);
               setPage(1);
             }}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+            className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
               selectedCategory === cat.id
                 ? "bg-yellow-400 text-black shadow-lg"
-                : "bg-[#222] hover:bg-yellow-400 hover:text-black"
+                : "bg-white/5 hover:bg-yellow-400 hover:text-black"
             }`}
           >
             {cat.name}
@@ -136,24 +134,26 @@ export default function MoviesPage() {
       </div>
 
       {/* Movies Grid */}
-      <motion.div
-        layout
-        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 px-6"
-      >
-        {movies.length > 0 ? (
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 px-6">
+        {loading ? (
+          <p className="text-center col-span-full text-gray-400 animate-pulse">Yuklanmoqda...</p>
+        ) : movies.length > 0 ? (
           movies.map((m) => (
             <motion.div
               key={m.id}
               whileHover={{ scale: 1.05 }}
-              className="group relative bg-[#1a1a1a]/70 backdrop-blur-md rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="group relative bg-white/5 backdrop-blur-md rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(255,255,255,0.08)] hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] transition-all duration-300"
             >
               <Link href={`/Movies/${m.id}`}>
                 <img
                   src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}/t/p/w500${m.poster_path}`}
                   alt={m.title}
-                  className="w-full h-80 object-cover group-hover:opacity-80 transition duration-300"
+                  className="w-full h-80 object-cover group-hover:opacity-75 transition duration-300"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-3">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-3">
                   <h2 className="font-semibold text-lg text-yellow-400 truncate">
                     {m.title}
                   </h2>
@@ -165,20 +165,18 @@ export default function MoviesPage() {
             </motion.div>
           ))
         ) : (
-          <p className="text-center col-span-full text-gray-400">
-            Kinolar topilmadi
-          </p>
+          <p className="text-center col-span-full text-gray-400">Kinolar topilmadi 😕</p>
         )}
-      </motion.div>
+      </section>
 
       {/* Pagination */}
-      <div className="flex justify-center items-center gap-4 mt-10 pb-10">
+      <div className="flex justify-center items-center gap-4 mt-12 pb-12">
         <button
           onClick={prevPage}
           disabled={page === 1}
-          className="px-4 py-2 bg-[#222] rounded-full disabled:opacity-40 hover:bg-yellow-400 hover:text-black transition"
+          className="p-3 bg-white/5 rounded-full disabled:opacity-40 hover:bg-yellow-400 hover:text-black transition-all duration-200"
         >
-          <HiOutlineChevronDoubleLeft />
+          <HiOutlineChevronDoubleLeft className="text-xl" />
         </button>
         <span className="text-yellow-400 font-semibold">
           {page} / {totalPages}
@@ -186,9 +184,9 @@ export default function MoviesPage() {
         <button
           onClick={nextPage}
           disabled={page === totalPages}
-          className="px-4 py-2 bg-[#222] rounded-full disabled:opacity-40 hover:bg-yellow-400 hover:text-black transition"
+          className="p-3 bg-white/5 rounded-full disabled:opacity-40 hover:bg-yellow-400 hover:text-black transition-all duration-200"
         >
-          <HiOutlineChevronDoubleRight />
+          <HiOutlineChevronDoubleRight className="text-xl" />
         </button>
       </div>
     </main>

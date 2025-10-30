@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import CartoonSlider from "../components/CartoonSlider";
-
 import { motion } from "framer-motion";
-import { HiOutlineChevronDoubleLeft, HiOutlineChevronDoubleRight } from "react-icons/hi";
+import {
+  HiOutlineChevronDoubleLeft,
+  HiOutlineChevronDoubleRight,
+} from "react-icons/hi";
 import { FaRegCalendarAlt, FaRegLaughBeam } from "react-icons/fa";
 
 export default function CartoonsPage() {
@@ -62,24 +64,28 @@ export default function CartoonsPage() {
       }
     }
     fetchCartoons();
-    router.replace(`/Cartoon?page=${page}&category=${selectedCategory}`, undefined, { scroll: false });
+    router.replace(
+      `/Cartoon?page=${page}&category=${selectedCategory}`,
+      undefined,
+      { scroll: false }
+    );
   }, [page, selectedCategory, router]);
 
   const prevPage = () => setPage((p) => Math.max(p - 1, 1));
   const nextPage = () => setPage((p) => Math.min(p + 1, totalPages));
 
-
-  
   return (
-    <main className="min-h-screen bg-gradient-to-b from-yellow-100 via-white to-yellow-50">
+    <main className="min-h-screen bg-neutral-950 text-white">
       <Navbar />
       <CartoonSlider />
 
-      <div className="text-center mt-8 mb-6">
-        <h1 className="text-4xl font-extrabold flex justify-center items-center gap-3 text-yellow-600">
-          <FaRegLaughBeam className="text-amber-500" /> Multfilmlar
+      <div className="text-center mt-10 mb-6">
+        <h1 className="text-4xl font-extrabold flex justify-center items-center gap-3 text-red-500">
+          <FaRegLaughBeam className="text-red-600" /> Multfilmlar
         </h1>
-        <p className="text-gray-500 mt-1">Eng yangi va mashhur multfilmlar ro‘yxati</p>
+        <p className="text-gray-400 mt-1">
+          Eng yangi va mashhur multfilmlar ro‘yxati
+        </p>
       </div>
 
       {/* Categories */}
@@ -94,8 +100,8 @@ export default function CartoonsPage() {
             }}
             className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
               selectedCategory === cat.id
-                ? "bg-yellow-400 text-black shadow-lg"
-                : "bg-white text-gray-600 hover:bg-yellow-100"
+                ? "bg-red-600 text-white shadow-md"
+                : "bg-neutral-800 text-gray-300 hover:bg-neutral-700"
             }`}
           >
             {cat.name}
@@ -105,7 +111,11 @@ export default function CartoonsPage() {
 
       {/* Movies Grid */}
       <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 px-6">
-        {cartoons.length > 0 ? (
+        {loading ? (
+          <p className="text-center col-span-full text-gray-400 text-lg">
+            Yuklanmoqda...
+          </p>
+        ) : cartoons.length > 0 ? (
           cartoons.map((c) => (
             <motion.div
               key={c.id}
@@ -113,7 +123,7 @@ export default function CartoonsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
               whileHover={{ scale: 1.03 }}
-              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all cursor-pointer"
+              className="bg-neutral-900 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all cursor-pointer"
             >
               <Link href={`/Cartoon/${c.id}`}>
                 <img
@@ -122,16 +132,19 @@ export default function CartoonsPage() {
                   className="w-full h-72 object-cover rounded-t-xl"
                 />
                 <div className="p-3">
-                  <h2 className="font-bold truncate text-gray-800">{c.title}</h2>
-                  <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                    <FaRegCalendarAlt className="text-yellow-500" /> {c.release_date}
+                  <h2 className="font-semibold truncate text-gray-200">
+                    {c.title}
+                  </h2>
+                  <p className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                    <FaRegCalendarAlt className="text-red-500" />{" "}
+                    {c.release_date}
                   </p>
                 </div>
               </Link>
             </motion.div>
           ))
         ) : (
-          <p className="text-center col-span-full text-gray-500 text-lg">
+          <p className="text-center col-span-full text-gray-400 text-lg">
             Multfilmlar topilmadi 😕
           </p>
         )}
@@ -142,19 +155,19 @@ export default function CartoonsPage() {
         <button
           onClick={prevPage}
           disabled={page === 1}
-          className="p-3 bg-white rounded-full shadow hover:bg-yellow-100 disabled:opacity-40"
+          className="p-3 bg-neutral-800 rounded-full hover:bg-neutral-700 disabled:opacity-40"
         >
-          <HiOutlineChevronDoubleLeft className="text-xl text-gray-600" />
+          <HiOutlineChevronDoubleLeft className="text-xl text-gray-300" />
         </button>
-        <span className="text-gray-600 font-medium">
+        <span className="text-gray-300 font-medium">
           Sahifa {page} / {totalPages}
         </span>
         <button
           onClick={nextPage}
           disabled={page === totalPages}
-          className="p-3 bg-white rounded-full shadow hover:bg-yellow-100 disabled:opacity-40"
+          className="p-3 bg-neutral-800 rounded-full hover:bg-neutral-700 disabled:opacity-40"
         >
-          <HiOutlineChevronDoubleRight className="text-xl text-gray-600" />
+          <HiOutlineChevronDoubleRight className="text-xl text-gray-300" />
         </button>
       </div>
     </main>

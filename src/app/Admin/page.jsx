@@ -31,7 +31,6 @@ export default function AdminPage() {
       }
 
       setUser(currentUser);
-
       try {
         const curSnap = await getDoc(doc(db, "users", currentUser.uid));
         const curData = curSnap.exists() ? curSnap.data() : null;
@@ -131,28 +130,28 @@ export default function AdminPage() {
     });
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 min-h-screen py-10 px-6">
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] py-10 px-6">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide z-50">
+        <div className="fixed top-5 right-5 bg-[var(--accent)] text-black px-6 py-3 rounded-xl shadow-lg transition-all duration-500 z-50">
           {toast}
         </div>
       )}
 
       {/* Title */}
-      <h1 className="text-4xl font-extrabold text-center text-gray-800 mb-10 underline underline-offset-8 decoration-yellow-400">
-        👑 Admin Dashboard
+      <h1 className="text-3xl md:text-4xl font-bold text-center mb-10">
+        👑 <span className="text-[var(--primary)]">Admin Dashboard</span>
       </h1>
 
       {/* Search & Filters */}
-      <div className="max-w-6xl mx-auto bg-white/70 backdrop-blur-md p-6 rounded-2xl shadow-md border border-gray-200 mb-8">
+      <div className="max-w-6xl mx-auto bg-[var(--surface)] p-6 rounded-2xl shadow-cinematic border border-[rgba(255,255,255,0.05)] mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <input
             type="text"
             placeholder="🔍 Foydalanuvchi qidirish (ism/email)"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full md:w-1/2 p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-yellow-400 outline-none shadow-sm"
+            className="w-full md:w-1/2 p-3 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] placeholder:text-[var(--muted)] focus:ring-2 focus:ring-[var(--primary)] outline-none"
           />
           <div className="flex flex-wrap gap-2 justify-center">
             {[
@@ -165,10 +164,10 @@ export default function AdminPage() {
               <button
                 key={f.key}
                 onClick={() => setFilter(f.key)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                   filter === f.key
-                    ? "bg-yellow-400 text-black shadow"
-                    : "bg-gray-200 hover:bg-gray-300"
+                    ? "bg-[var(--primary)] text-black shadow-lg"
+                    : "bg-[rgba(255,255,255,0.05)] text-[var(--text)] hover:bg-[rgba(255,255,255,0.1)]"
                 }`}
               >
                 {f.label}
@@ -179,13 +178,13 @@ export default function AdminPage() {
       </div>
 
       {/* Table */}
-      <div className="max-w-6xl mx-auto bg-white/80 backdrop-blur-md rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+      <div className="max-w-6xl mx-auto bg-[var(--surface)] rounded-2xl shadow-cinematic overflow-hidden border border-[rgba(255,255,255,0.05)]">
         <table className="w-full text-sm md:text-base">
-          <thead className="bg-yellow-400 text-black">
+          <thead className="bg-[var(--primary)] text-black">
             <tr>
-              <th className="p-3">#</th>
-              <th className="p-3">Name</th>
-              <th className="p-3">Email</th>
+              <th className="p-3 text-left">#</th>
+              <th className="p-3 text-left">Name</th>
+              <th className="p-3 text-left">Email</th>
               <th className="p-3">Role</th>
               <th className="p-3">Plan</th>
               <th className="p-3 text-center">Actions</th>
@@ -194,7 +193,7 @@ export default function AdminPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" className="p-6 text-center text-gray-500">
+                <td colSpan="6" className="p-6 text-center text-[var(--muted)]">
                   Yuklanmoqda...
                 </td>
               </tr>
@@ -202,18 +201,16 @@ export default function AdminPage() {
               filteredUsers.map((u, i) => (
                 <tr
                   key={u.id}
-                  className="border-b hover:bg-yellow-50 transition"
+                  className="border-b border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.05)] transition"
                 >
                   <td className="p-3">{i + 1}</td>
-                  <td className="p-3 font-medium text-gray-800">
-                    {u?.name || (u?.email || "").split("@")[0]}
-                  </td>
-                  <td className="p-3">{u?.email || "—"}</td>
+                  <td className="p-3 font-medium">{u?.name || (u?.email || "").split("@")[0]}</td>
+                  <td className="p-3 text-[var(--muted)]">{u?.email || "—"}</td>
                   <td className="p-3">
                     <select
                       value={u?.role ?? "user"}
                       onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                      className="p-2 rounded-lg border border-gray-300 bg-gray-50"
+                      className="p-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)]"
                     >
                       <option value="user">User</option>
                       <option value="admin">Admin</option>
@@ -223,7 +220,7 @@ export default function AdminPage() {
                     <select
                       value={u?.plan ?? "free"}
                       onChange={(e) => handlePlanChange(u.id, e.target.value)}
-                      className="p-2 rounded-lg border border-gray-300 bg-gray-50"
+                      className="p-2 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)]"
                     >
                       <option value="free">Free</option>
                       <option value="premium">Premium</option>
@@ -232,7 +229,7 @@ export default function AdminPage() {
                   <td className="p-3 text-center">
                     <button
                       onClick={() => handleDelete(u.id)}
-                      className="text-red-600 hover:text-red-800 transition"
+                      className="text-red-500 hover:text-red-400 transition"
                     >
                       <Trash2 className="inline-block w-5 h-5" />
                     </button>
@@ -241,10 +238,7 @@ export default function AdminPage() {
               ))
             ) : (
               <tr>
-                <td
-                  colSpan="6"
-                  className="p-6 text-center text-gray-500 italic"
-                >
+                <td colSpan="6" className="p-6 text-center text-[var(--muted)] italic">
                   Hech qanday foydalanuvchi topilmadi 🙁
                 </td>
               </tr>

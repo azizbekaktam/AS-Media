@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, Bell } from "lucide-react";
 import Search from "./Search";
-import LogOut from "./LogOut";
 import UserProfile from "./UserPage";
 import { auth, db } from "../../../firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -32,94 +31,106 @@ export default function Navbar() {
     { name: "Home", href: "/" },
     { name: "Movies", href: "/Movies" },
     { name: "Cartoon", href: "/Cartoon" },
-    { name: "Like", href: "/LIkedPage" },
+    { name: "Like", href: "/LikedPage" }, // ✅ to‘g‘rilangan link
     { name: "WatchList", href: "/WatchList" },
   ];
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-gray-900 shadow-lg">
+    <nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 backdrop-blur-md border-b border-yellow-500/20 shadow-lg">
       <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-        <div className="font-extrabold text-2xl tracking-wide text-yellow-500">
-          As<span className="text-white">Media</span>
-        </div>
+        {/* LOGO */}
+        <Link href="/" className="font-extrabold text-2xl tracking-wide">
+          <span className="bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
+            AsMedia
+          </span>
+        </Link>
 
-        <ul className="hidden md:flex gap-6 font-medium text-white items-center">
+        {/* DESKTOP NAV */}
+        <ul className="hidden md:flex gap-8 font-medium text-gray-200 items-center">
           {navItems.map((item) => (
             <Link key={item.name} href={item.href} className="relative group">
               <li
-                className={`cursor-pointer transition-colors ${
+                className={`cursor-pointer transition-all duration-300 ${
                   pathname === item.href
-                    ? "text-yellow-400 font-bold"
-                    : "hover:text-yellow-500"
+                    ? "text-yellow-400 font-semibold"
+                    : "hover:text-yellow-300"
                 }`}
               >
                 {item.name}
               </li>
-              <span className="absolute left-0 -bottom-1 w-0 group-hover:w-full h-0.5 bg-yellow-500 transition-all"></span>
+              <span
+                className={`absolute left-0 -bottom-1 h-[2px] bg-yellow-400 rounded-full transition-all duration-300 ${
+                  pathname === item.href ? "w-full" : "w-0 group-hover:w-full"
+                }`}
+              ></span>
             </Link>
           ))}
 
           {userRole === "admin" && (
             <Link href="/Admin" className="relative group">
               <li
-                className={`cursor-pointer transition-colors ${
+                className={`cursor-pointer transition-all duration-300 ${
                   pathname === "/Admin"
-                    ? "text-yellow-400 font-bold"
-                    : "hover:text-yellow-500"
+                    ? "text-yellow-400 font-semibold"
+                    : "hover:text-yellow-300"
                 }`}
               >
                 Admin
               </li>
-              <span className="absolute left-0 -bottom-1 w-0 group-hover:w-full h-0.5 bg-yellow-500 transition-all"></span>
+              <span className="absolute left-0 -bottom-1 w-0 group-hover:w-full h-[2px] bg-yellow-400 transition-all duration-300"></span>
             </Link>
           )}
 
           <li className="relative">
-            <Bell className="w-5 h-5 cursor-pointer hover:text-yellow-500 transition-colors" />
-            <span className="absolute -top-2 -right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+            <Bell className="w-5 h-5 cursor-pointer hover:text-yellow-400 transition-colors" />
+            <span className="absolute -top-1.5 -right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
           </li>
         </ul>
 
+        {/* RIGHT SIDE */}
         <div className="flex items-center gap-4">
           <div className="hidden md:block w-40 lg:w-56">
             <Search />
           </div>
-          <div className="w-10  h-10 rounded-full border-2 border-yellow-500 relative">
+
+          <div className="w-10 h-10 rounded-full border-2 border-yellow-500 overflow-hidden">
             <UserProfile />
           </div>
-          {/* <Link
-            href={"/LIkedPage"}
-            className="w-9 h-9 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500 flex items-center justify-center text-black font-bold text-xs shadow-md hover:scale-110 transition-transform"
-          >
-            ♥
-          </Link> */}
-
-          {/* <LogOut /> */}
 
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-white"
+            className="md:hidden text-yellow-400 hover:text-yellow-300 transition"
           >
             {isOpen ? <X size={26} /> : <Menu size={26} />}
           </button>
         </div>
       </div>
 
+      {/* MOBILE MENU */}
       {isOpen && (
-        <div className="md:hidden bg-gray-900 shadow-md px-6 py-4 space-y-4 text-white">
+        <div className="md:hidden bg-gray-900/95 backdrop-blur-md border-t border-yellow-500/20 shadow-inner px-6 py-4 space-y-4 text-gray-200 animate-fade-in">
           <Search />
           {navItems.map((item) => (
             <Link
               key={item.name}
               href={item.href}
-              className="block hover:text-yellow-500"
+              onClick={() => setIsOpen(false)}
+              className={`block transition-all ${
+                pathname === item.href
+                  ? "text-yellow-400 font-semibold"
+                  : "hover:text-yellow-300"
+              }`}
             >
               {item.name}
             </Link>
           ))}
           {userRole === "admin" && (
-            <Link href="/Admin" className="block hover:text-yellow-500">
-              Admin page
+            <Link
+              href="/Admin"
+              onClick={() => setIsOpen(false)}
+              className="block hover:text-yellow-300"
+            >
+              Admin Panel
             </Link>
           )}
         </div>

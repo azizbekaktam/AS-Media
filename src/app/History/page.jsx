@@ -15,8 +15,9 @@ import { FaTrash } from "react-icons/fa";
 export default function HistoryPage() {
   const [history, setHistory] = useState([]);
   const [user, setUser] = useState(null);
+  const [confirmClear, setConfirmClear] = useState(false);
 
-  // 🔹 Userni kuzatish
+  // 🔹 Auth listener
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
@@ -24,23 +25,23 @@ export default function HistoryPage() {
     return () => unsubscribe();
   }, []);
 
-  // 🔹 Real-time history olish
+  // 🔹 Real-time tarix olish
   useEffect(() => {
     if (!user) return;
 
     const ref = collection(db, "users", user.uid, "history");
-
     const unsubscribe = onSnapshot(ref, (snapshot) => {
       const movies = snapshot.docs.map((docSnap) => ({
         id: docSnap.id,
         ...docSnap.data(),
       }));
 
+      // Sort by watchedAt
       setHistory(
         movies.sort(
           (a, b) =>
-            (b.watchedAt?.toDate?.() || 0) -
-            (a.watchedAt?.toDate?.() || 0)
+            (b.watchedAt?.toDate?.()?.getTime?.() || 0) -
+            (a.watchedAt?.toDate?.()?.getTime?.() || 0)
         )
       );
     });
@@ -48,17 +49,16 @@ export default function HistoryPage() {
     return () => unsubscribe();
   }, [user]);
 
-  // 🔹 Bitta o‘chirish
+  // 🔹 Bitta kinoni o‘chirish
   const handleDelete = async (id) => {
     if (!user) return;
     const ref = doc(db, "users", user.uid, "history", id);
     await deleteDoc(ref);
   };
 
-  // 🔹 Hammasini o‘chirish
+  // 🔹 Barcha tarixni o‘chirish
   const handleClearAll = async () => {
     if (!user || history.length === 0) return;
-    if (!confirm("Barcha tarixni o‘chirishni xohlaysizmi?")) return;
 
     const batch = writeBatch(db);
     history.forEach((movie) => {
@@ -67,62 +67,102 @@ export default function HistoryPage() {
     });
 
     await batch.commit();
+    setConfirmClear(false);
   };
 
   if (!user)
     return (
-      <main className="p-6">
-        <p className="text-center text-gray-600 dark:text-gray-300">
-          Avval login qiling! 🔑
-        </p>
+      <main className="flex items-center justify-center min-h-screen bg-black text-white">
+        <p className="text-lg">Avval login qiling! 🔑</p>
       </main>
     );
 
   return (
-    <main className="p-6 bg-gray-50 dark:bg-black min-h-screen">
-      <BackButton />
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          📺 Ko‘rilganlar Tarixi
+    <main className="p-6 min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white">
+      <div className="flex items-center justify-between mb-8">
+        <BackButton />
+        <h1 className="text-3xl font-bold text-yellow-400 flex items-center gap-2">
+          🎬 Ko‘rilganlar Tarixi
         </h1>
         {history.length > 0 && (
           <button
-            onClick={handleClearAll}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center gap-2"
+            onClick={() => setConfirmClear(true)}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg flex items-center gap-2 font-semibold transition"
           >
             <FaTrash /> Clear All
           </button>
         )}
       </div>
 
+      {/* Agar tarix bo‘sh bo‘lsa */}
       {history.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400 text-center">
-          Hozircha hech qanday kino ko‘rilmagan 😔
-        </p>
+        <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
+          <p className="text-5xl mb-3">📭</p>
+          <p className="text-lg">Hozircha hech qanday kino ko‘rilmagan 😔</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-6">
           {history.map((movie) => (
             <div
               key={movie.id}
-              className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-transform hover:scale-105"
+              className="group relative overflow-hidden rounded-2xl shadow-lg bg-white/10 backdrop-blur-lg border border-white/10 hover:scale-105 transition-transform duration-300"
             >
-              {movie.poster && (
-                <img
-                  src={`https://image.tmdb.org/t/p/w500${movie.poster}`}
-                  alt={movie.title}
-                  className="w-full h-72 object-cover rounded-2xl"
-                />
-              )}
+              <img
+                src={
+                  movie.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                    : "/no-image.jpg"
+                }
+                alt={movie.title}
+                className="w-full h-72 object-cover rounded-2xl"
+              />
+
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button
                   onClick={() => handleDelete(movie.id)}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg flex items-center gap-2"
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg flex items-center gap-2 text-sm font-semibold"
                 >
                   <FaTrash /> O‘chirish
                 </button>
               </div>
+
+              <div className="p-3 text-center">
+                <h2 className="text-white font-semibold truncate">
+                  {movie.title}
+                </h2>
+                {movie.release_date && (
+                  <p className="text-gray-400 text-sm">
+                    {movie.release_date.slice(0, 4)}
+                  </p>
+                )}
+              </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* 🔴 Tasdiqlash modal */}
+      {confirmClear && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center">
+            <h2 className="text-xl font-semibold mb-4">
+              Barcha tarixni o‘chirmoqchimisiz?
+            </h2>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleClearAll}
+                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
+              >
+                Ha, o‘chir
+              </button>
+              <button
+                onClick={() => setConfirmClear(false)}
+                className="bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded-lg"
+              >
+                Yo‘q, bekor
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>
