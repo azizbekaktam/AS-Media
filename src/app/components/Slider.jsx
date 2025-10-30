@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import Spinder from "./Spinder";
+
 import { HiArrowCircleRight, HiArrowCircleLeft  } from "react-icons/hi";
 
 export default function Slider() {
@@ -32,7 +32,7 @@ export default function Slider() {
   if (!movies.length)
     return (
       <p className="text-center mt-10">
-        <Spinder />
+
       </p>
     );
 

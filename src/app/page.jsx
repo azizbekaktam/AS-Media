@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Spinder from './components/Spinder';
 import MoviesPage from './Movies/page';
 
 export default function Home() {
@@ -22,8 +21,7 @@ export default function Home() {
   }, [router]);
 
   if (loading) {
-    return <Spinder />;
-  }
+return  }
 
   if (!isAuth) {
     return null; // redirect bo‘lguncha hech narsa ko‘rinmasin

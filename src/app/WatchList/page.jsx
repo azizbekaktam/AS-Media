@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../../../firebase";
 import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
-import Spinder from "../components/Spinder";
+
 import { FaBookmark } from "react-icons/fa";
 import BackButton from "../components/BackButton";
 
@@ -58,7 +58,7 @@ export default function WatchlistPage() {
   if (loading)
     return (
       <div className="flex justify-center items-center h-screen">
-        <Spinder />
+
       </div>
     );
 

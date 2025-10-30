@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
-import Spinder from "../components/Spinder";
+
 import Slider from "../components/Slider";
 import { motion } from "framer-motion";
 import { HiOutlineChevronDoubleLeft, HiOutlineChevronDoubleRight } from "react-icons/hi";
@@ -86,7 +86,6 @@ export default function MoviesPage() {
   const prevPage = () => setPage((p) => Math.max(p - 1, 1));
   const nextPage = () => setPage((p) => Math.min(p + 1, totalPages));
 
-  if (loading) return <Spinder />;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#0f0f0f] via-[#151515] to-[#0a0a0a] text-white">

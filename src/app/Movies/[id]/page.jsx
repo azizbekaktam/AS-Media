@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import BackButton from "@/app/components/BackButton";
-import Spinder from "@/app/components/Spinder";
 import LikeButton from "@/app/components/LikeButton";
 import WatchlistButton from "@/app/components/Watchlist";
 import axios from "axios";
@@ -63,7 +62,6 @@ export default function MovieDetail({ token }) {
   if (!movie)
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
-        <Spinder />
       </div>
     );
 

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import CartoonSlider from "../components/CartoonSlider";
-import Spinder from "../components/Spinder";
+
 import { motion } from "framer-motion";
 import { HiOutlineChevronDoubleLeft, HiOutlineChevronDoubleRight } from "react-icons/hi";
 import { FaRegCalendarAlt, FaRegLaughBeam } from "react-icons/fa";
@@ -68,8 +68,8 @@ export default function CartoonsPage() {
   const prevPage = () => setPage((p) => Math.max(p - 1, 1));
   const nextPage = () => setPage((p) => Math.min(p + 1, totalPages));
 
-  if (loading) return <Spinder />;
 
+  
   return (
     <main className="min-h-screen bg-gradient-to-b from-yellow-100 via-white to-yellow-50">
       <Navbar />

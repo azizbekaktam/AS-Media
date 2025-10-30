@@ -2,7 +2,7 @@
 import { useState } from "react";
 import axios from "axios";
 import Link from "next/link";
-import Spinder from "./Spinder";
+
 
 export default function Search() {
   const [query, setQuery] = useState("");
@@ -56,7 +56,7 @@ export default function Search() {
           className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-900 
                     rounded-xl shadow-lg p-3 z-20 text-center text-gray-500 dark:text-gray-400"
         >
-          <Spinder />
+
         </div>
       )}
 

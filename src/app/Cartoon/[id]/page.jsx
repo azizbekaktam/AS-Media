@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import BackButton from "@/app/components/BackButton";
-import Spinder from "@/app/components/Spinder";
+
 import LikeButton from "@/app/components/LikeButton";
 import WatchlistButton from "@/app/components/Watchlist";
 import { db } from "../../../../firebase";
@@ -69,7 +69,7 @@ export default function CartoonDetail({ token }) {
   if (loading || !cartoon)
     return (
       <div className="flex justify-center mt-20">
-        <Spinder />
+
       </div>
     );
 

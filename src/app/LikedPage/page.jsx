@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, db } from "../../../firebase";
 import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
-import Spinder from "../components/Spinder";
 import { FaRegHeart } from "react-icons/fa";
 import BackButton from "../components/BackButton";
 import { HiOutlineTrash } from "react-icons/hi";
@@ -50,7 +49,7 @@ export default function LikesPage() {
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white">
-        <Spinder />
+
       </div>
     );
 
