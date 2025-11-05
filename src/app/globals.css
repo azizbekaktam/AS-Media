@@ -9,6 +9,13 @@
 .dark body {
   @apply bg-black text-red;
 } */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out;
+}
 
 .loader, .loader:before, .loader:after {
   border-radius: 51%;

@@ -8,14 +8,18 @@ import {
 import { setDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 export default function RegPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleRegister = async () => {
+    setLoading(true);
+    setError("");
     try {
       const methods = await fetchSignInMethodsForEmail(auth, email);
 
@@ -24,11 +28,10 @@ export default function RegPage() {
           setError("Bu email allaqachon ro‘yxatdan o‘tgan. Iltimos, login qiling.");
         } else {
           setError(
-            `Bu email boshqa usul bilan ro‘yxatdan o‘tgan (${methods.join(
-              ", "
-            )}). Shu usul bilan kiring.`
+            `Bu email boshqa usul bilan ro‘yxatdan o‘tgan (${methods.join(", ")}). Shu usul bilan kiring.`
           );
         }
+        setLoading(false);
         return;
       }
 
@@ -52,52 +55,81 @@ export default function RegPage() {
       } else {
         setError("Ro‘yxatdan o‘tishda xatolik ❌");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
-      <div className="bg-white/10 backdrop-blur-lg shadow-xl rounded-2xl p-8 w-full max-w-md border border-white/20">
-        <h2 className="text-4xl font-extrabold text-center mb-6 text-white drop-shadow-md">
-          Create Account
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 px-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6 }}
+        className="bg-gray-900/80 backdrop-blur-md border border-gray-700 rounded-3xl shadow-2xl p-8 max-w-md w-full"
+      >
+        <h2 className="text-4xl font-extrabold text-white text-center mb-4 drop-shadow-md">
+          Ro‘yxatdan o‘tish 🎬
         </h2>
+        <p className="text-gray-300 text-center mb-6">
+          Hisob yaratish orqali kino dunyosiga qo‘shiling!
+        </p>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="bg-white/20 border border-white/30 focus:border-white/70 placeholder-white/70 text-white outline-none p-3 w-full mb-4 rounded-lg focus:ring-2 focus:ring-white/50 transition"
-        />
-
-        <input
-          type="password"
-          placeholder="Password (min 6 characters)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="bg-white/20 border border-white/30 focus:border-white/70 placeholder-white/70 text-white outline-none p-3 w-full mb-6 rounded-lg focus:ring-2 focus:ring-white/50 transition"
-        />
-
-        <button
-          onClick={handleRegister}
-          className="w-full bg-white text-indigo-600 font-semibold py-3 rounded-lg hover:bg-indigo-100 transition"
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleRegister();
+          }}
+          className="flex flex-col gap-4"
         >
-          Register
-        </button>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="bg-gray-800 border border-gray-600 text-gray-100 placeholder-gray-400 focus:border-gray-400 focus:ring focus:ring-gray-500/30 outline-none p-3 rounded-xl transition"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Parol (kamida 6 ta belgi)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="bg-gray-800 border border-gray-600 text-gray-100 placeholder-gray-400 focus:border-gray-400 focus:ring focus:ring-gray-500/30 outline-none p-3 rounded-xl transition"
+            required
+          />
 
-        {error && (
-          <p className="text-red-200 text-center mt-3 bg-red-500/30 rounded-lg py-2 text-sm">
-            {error}
-          </p>
-        )}
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-xl shadow-md transition-all duration-300 ${
+              loading ? "opacity-70 cursor-not-allowed" : ""
+            }`}
+          >
+            {loading ? "Yuklanmoqda..." : "Register"}
+          </button>
 
-        <p className="mt-6 text-sm text-center text-white/80">
+          {error && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-red-400 text-center font-medium mt-2 bg-red-900/20 py-2 rounded-lg text-sm"
+            >
+              {error}
+            </motion.p>
+          )}
+        </form>
+
+        <p className="mt-6 text-center text-gray-400 text-sm">
           Allaqachon akkauntingiz bormi?{" "}
-          <Link href="/LoginPage" className="text-white font-semibold hover:underline">
+          <Link
+            href="/LoginPage"
+            className="text-blue-400 font-semibold hover:underline"
+          >
             Login
           </Link>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

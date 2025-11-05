@@ -11,15 +11,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       const token = await user.getIdToken();
       localStorage.setItem("token", token);
@@ -37,54 +36,78 @@ export default function LoginPage() {
       router.push("/Movies");
     } catch (err) {
       setError("Email yoki parol noto‘g‘ri ❌");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 px-4">
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
-        className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl shadow-2xl p-8 w-full max-w-md"
+        className="bg-gray-900/80 backdrop-blur-md border border-gray-700 rounded-3xl shadow-2xl p-8 max-w-md w-full"
       >
-        <h2 className="text-4xl font-extrabold text-center text-white mb-6 drop-shadow-lg">
-          Welcome Back 🎬
+        <h2 className="text-4xl font-extrabold text-white text-center mb-4 drop-shadow-md">
+          Kino Dunyosiga Xush Kelibsiz 🎬
         </h2>
-        <p className="text-white/80 text-center mb-6">
-          Kino dunyosiga qaytganingizdan xursandmiz!
+        <p className="text-gray-300 text-center mb-6">
+          Hisobingizga kirish orqali barcha filmlarni kuzatib boring!
         </p>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border border-white/30 bg-white/10 text-white placeholder-white/60 focus:border-pink-400 focus:ring focus:ring-pink-300/30 outline-none p-3 w-full mb-4 rounded-lg"
-        />
-        <input
-          type="password"
-          placeholder="Parol"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="border border-white/30 bg-white/10 text-white placeholder-white/60 focus:border-pink-400 focus:ring focus:ring-pink-300/30 outline-none p-3 w-full mb-4 rounded-lg"
-        />
-
-        <button
-          onClick={handleLogin}
-          className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 rounded-lg transition shadow-md hover:shadow-pink-500/50"
+        <motion.form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleLogin();
+          }}
+          className="flex flex-col gap-4"
         >
-          Login
-        </button>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="border border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400 focus:border-gray-400 focus:ring focus:ring-gray-500/30 outline-none p-3 rounded-xl transition"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Parol"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="border border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400 focus:border-gray-400 focus:ring focus:ring-gray-500/30 outline-none p-3 rounded-xl transition"
+            required
+          />
 
-        {error && (
-          <p className="text-red-300 text-center mt-3 font-medium">{error}</p>
-        )}
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-xl shadow-md transition-all duration-300 ${
+              loading ? "opacity-70 cursor-not-allowed" : ""
+            }`}
+          >
+            {loading ? "Yuklanmoqda..." : "Login"}
+          </button>
 
-        <p className="mt-6 text-sm text-center text-white/80">
+          {error && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-red-400 text-center font-medium mt-2"
+            >
+              {error}
+            </motion.p>
+          )}
+        </motion.form>
+
+        <p className="mt-6 text-center text-gray-400 text-sm">
           Hali ro‘yxatdan o‘tmaganmisiz?{" "}
-          <Link href="/RegPage" className="text-yellow-300 hover:underline">
-            Register
+          <Link
+            href="/RegPage"
+            className="text-blue-400 font-semibold hover:underline"
+          >
+            Ro‘yxatdan o‘tish
           </Link>
         </p>
       </motion.div>

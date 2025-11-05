@@ -25,16 +25,14 @@ export default function MoviesPage() {
     86767, 1212337, 1234720, 1252309, 1501238, 1357459, 1241752,
   ];
 
+  // URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const currentPage = parseInt(params.get("page")) || 1;
-    const currentCategory = params.get("category")
-      ? parseInt(params.get("category"))
-      : null;
-    setPage(currentPage);
-    setSelectedCategory(currentCategory);
+    setPage(parseInt(params.get("page")) || 1);
+    setSelectedCategory(params.get("category") ? parseInt(params.get("category")) : null);
   }, []);
 
+  // Fetch genres
   useEffect(() => {
     async function fetchGenres() {
       try {
@@ -50,6 +48,7 @@ export default function MoviesPage() {
     fetchGenres();
   }, []);
 
+  // Fetch movies
   useEffect(() => {
     async function fetchMovies() {
       try {
@@ -61,10 +60,7 @@ export default function MoviesPage() {
         const res = await fetch(url);
         const data = await res.json();
 
-        const filtered = (data.results || []).filter(
-          (m) => !blockedIds.includes(m.id)
-        );
-
+        const filtered = (data.results || []).filter((m) => !blockedIds.includes(m.id));
         setMovies(filtered);
         setTotalPages(data.total_pages || 1);
       } catch (err) {
@@ -94,38 +90,31 @@ export default function MoviesPage() {
       <motion.h1
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center text-4xl font-extrabold mt-10 mb-6 flex items-center justify-center gap-2 text-yellow-400"
+        className="text-center text-4xl sm:text-5xl font-extrabold mt-10 mb-6 flex items-center justify-center gap-2 text-yellow-400"
       >
-        <MdMovie className="text-yellow-400 text-5xl" /> Kinolar
+        <MdMovie className="text-5xl sm:text-6xl" /> Kinolar
       </motion.h1>
 
       {/* Categories */}
-      <div className="flex flex-wrap gap-3 justify-center mb-12 px-4">
+      <div className="flex flex-wrap gap-3 justify-center mb-12 px-4 sm:px-6 lg:px-8">
         <button
-          onClick={() => {
-            setSelectedCategory(null);
-            setPage(1);
-          }}
-          className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+          onClick={() => { setSelectedCategory(null); setPage(1); }}
+          className={`px-5 py-2 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 ${
             selectedCategory === null
-              ? "bg-yellow-400 text-black shadow-lg"
-              : "bg-white/5 hover:bg-yellow-400 hover:text-black"
+              ? "bg-yellow-400 text-black shadow-xl"
+              : "bg-white/5 hover:bg-yellow-400 hover:text-black shadow-sm"
           }`}
         >
           Barchasi
         </button>
-
         {categories.map((cat) => (
           <button
             key={cat.id}
-            onClick={() => {
-              setSelectedCategory(cat.id);
-              setPage(1);
-            }}
-            className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+            onClick={() => { setSelectedCategory(cat.id); setPage(1); }}
+            className={`px-5 py-2 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 ${
               selectedCategory === cat.id
-                ? "bg-yellow-400 text-black shadow-lg"
-                : "bg-white/5 hover:bg-yellow-400 hover:text-black"
+                ? "bg-yellow-400 text-black shadow-xl"
+                : "bg-white/5 hover:bg-yellow-400 hover:text-black shadow-sm"
             }`}
           >
             {cat.name}
@@ -134,7 +123,7 @@ export default function MoviesPage() {
       </div>
 
       {/* Movies Grid */}
-      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 px-6">
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 px-4 sm:px-6 lg:px-8">
         {loading ? (
           <p className="text-center col-span-full text-gray-400 animate-pulse">Yuklanmoqda...</p>
         ) : movies.length > 0 ? (
@@ -149,16 +138,20 @@ export default function MoviesPage() {
             >
               <Link href={`/Movies/${m.id}`}>
                 <img
-                  src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}/t/p/w500${m.poster_path}`}
-                  alt={m.title}
-                  className="w-full h-80 object-cover group-hover:opacity-75 transition duration-300"
+                  src={
+                    m.poster_path
+                      ? `${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}/t/p/w500${m.poster_path}`
+                      : "/fallback-poster.png"
+                  }
+                  alt={m.title || "Movie Poster"}
+                  className="w-full h-64 sm:h-80 lg:h-96 object-cover group-hover:opacity-75 transition duration-300"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-3">
-                  <h2 className="font-semibold text-lg text-yellow-400 truncate">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-3">
+                  <h2 className="font-semibold text-lg sm:text-xl text-yellow-400 truncate">
                     {m.title}
                   </h2>
-                  <p className="text-xs text-gray-300 flex items-center gap-1">
-                    <FaRegCalendarAlt /> {m.release_date}
+                  <p className="text-xs sm:text-sm text-gray-300 flex items-center gap-1">
+                    <FaRegCalendarAlt /> {m.release_date || "N/A"}
                   </p>
                 </div>
               </Link>
@@ -176,9 +169,9 @@ export default function MoviesPage() {
           disabled={page === 1}
           className="p-3 bg-white/5 rounded-full disabled:opacity-40 hover:bg-yellow-400 hover:text-black transition-all duration-200"
         >
-          <HiOutlineChevronDoubleLeft className="text-xl" />
+          <HiOutlineChevronDoubleLeft className="text-xl sm:text-2xl" />
         </button>
-        <span className="text-yellow-400 font-semibold">
+        <span className="text-yellow-400 font-bold text-lg sm:text-xl">
           {page} / {totalPages}
         </span>
         <button
@@ -186,7 +179,7 @@ export default function MoviesPage() {
           disabled={page === totalPages}
           className="p-3 bg-white/5 rounded-full disabled:opacity-40 hover:bg-yellow-400 hover:text-black transition-all duration-200"
         >
-          <HiOutlineChevronDoubleRight className="text-xl" />
+          <HiOutlineChevronDoubleRight className="text-xl sm:text-2xl" />
         </button>
       </div>
     </main>

@@ -13,7 +13,6 @@ export default function WatchlistPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // 🔹 Filmni o‘chirish funksiyasi
   const handleDelete = async (id) => {
     if (!user) return;
 
@@ -29,7 +28,6 @@ export default function WatchlistPage() {
     }
   };
 
-  // 🔹 Auth tekshirish
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
@@ -38,7 +36,6 @@ export default function WatchlistPage() {
     return () => unsubscribe();
   }, []);
 
-  // 🔹 Watchlist’ni olish
   useEffect(() => {
     const fetchWatchlist = async () => {
       if (!user) return;
@@ -54,64 +51,70 @@ export default function WatchlistPage() {
     fetchWatchlist();
   }, [user]);
 
-  // 🔹 Yuklanish holati
   if (loading)
     return (
-      <div className="flex justify-center items-center h-screen">
-
+      <div className="flex justify-center items-center h-screen text-gray-400">
+        Yuklanmoqda...
       </div>
     );
 
-  // 🔹 Login bo‘lmagan holatda
   if (!user)
     return (
-      <div className="text-center mt-10 text-lg font-medium">
+      <div className="text-center mt-10 text-lg font-medium text-gray-200">
         Avval login qiling!
       </div>
     );
 
   return (
-    <div className="p-4">
+    <div className="p-4 min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
       <BackButton />
-      <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
-        <FaBookmark className="text-blue-600" /> My Watchlist
+      <h1 className="text-3xl font-bold mb-6 flex items-center gap-3 text-yellow-400 drop-shadow-lg">
+        <FaBookmark /> My Watchlist
       </h1>
 
-      {error && <p className="text-red-500 mb-3">{error}</p>}
+      {error && (
+        <p className="text-red-400 mb-4 bg-red-900/20 p-2 rounded-lg shadow-inner">
+          {error}
+        </p>
+      )}
 
       {watchlist.length === 0 ? (
-        <p className="text-gray-600 text-lg mt-10 text-center">
+        <p className="text-gray-400 text-lg mt-10 text-center">
           Hech qanday kino qo‘shilmagan 😔
         </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-2">
           {watchlist.map((movie) => (
             <div
               key={movie.id}
-              className="bg-white shadow-md rounded-xl overflow-hidden hover:scale-105 transition-transform duration-300"
+              className="bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-transform transform hover:scale-105"
             >
-              {movie.poster_path && (
+              {movie.poster_path ? (
                 <img
                   src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
                   alt={movie.title}
                   className="w-full h-72 object-cover"
                 />
+              ) : (
+                <div className="w-full h-72 bg-gray-700 flex items-center justify-center text-gray-400">
+                  No Image
+                </div>
               )}
 
-              <div className="p-4">
-                <h2 className="text-lg font-bold mb-1 truncate">{movie.title}</h2>
-                <p className="text-gray-500 mb-3">{movie.release_date}</p>
+              <div className="p-4 space-y-2">
+                <h2 className="text-lg font-bold truncate">{movie.title}</h2>
+                <p className="text-gray-400 text-sm">{movie.release_date}</p>
 
-                <div className="flex justify-between">
+                <div className="flex gap-2 mt-3">
                   <a
                     href={`/Movies/${movie.id}`}
-                    className="flex-1 text-center px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                    className="flex-1 text-center px-3 py-2 bg-yellow-500 text-black rounded-lg font-semibold hover:bg-yellow-400 transition"
                   >
                     Details
                   </a>
                   <button
                     onClick={() => handleDelete(movie.id)}
-                    className="ml-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                    className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-500 transition"
                   >
                     Delete
                   </button>

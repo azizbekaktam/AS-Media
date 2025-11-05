@@ -1,174 +1,139 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import Navbar from "../components/Navbar";
-import CartoonSlider from "../components/CartoonSlider";
 import { motion } from "framer-motion";
-import {
-  HiOutlineChevronDoubleLeft,
-  HiOutlineChevronDoubleRight,
-} from "react-icons/hi";
-import { FaRegCalendarAlt, FaRegLaughBeam } from "react-icons/fa";
+import BackButton from "@/app/components/BackButton";
+import LikeButton from "@/app/components/LikeButton";
+import WatchlistButton from "@/app/components/Watchlist";
+import axios from "axios";
+import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { FaStar } from "react-icons/fa";
+import { auth, db } from "../../../../firebase";
+import { doc, setDoc } from "firebase/firestore";
 
-export default function CartoonsPage() {
-  const router = useRouter();
-  const [page, setPage] = useState(1);
-  const [cartoons, setCartoons] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(16);
+export default function CartoonDetail({ token }) {
+  const { id } = useParams();
+  const [cartoon, setCartoon] = useState(null);
+  const [trailer, setTrailer] = useState(null);
+  const [user, setUser] = useState(null);
 
+  // User auth
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const currentPage = parseInt(params.get("page")) || 1;
-    const currentCategory = parseInt(params.get("category")) || 16;
-    setPage(currentPage);
-    setSelectedCategory(currentCategory);
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => setUser(currentUser));
+    return () => unsubscribe();
   }, []);
 
+  // Fetch cartoon data
   useEffect(() => {
-    async function fetchGenres() {
+    const fetchCartoon = async () => {
       try {
-        const res = await fetch(
-          `https://api.themoviedb.org/3/genre/movie/list?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&language=en-US`
+        const { data } = await axios.get(
+          `${process.env.NEXT_PUBLIC_Project_TmdApi_Api}/movie/${id}?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&language=en-US`
         );
-        const data = await res.json();
-        const filtered = data.genres.filter((g) =>
-          [16, 35, 10751, 14, 12].includes(g.id)
-        );
-        setCategories(filtered);
-      } catch (error) {
-        console.error("Genres olishda xato:", error);
-      }
-    }
-    fetchGenres();
-  }, []);
+        const cartoonData = { ...data, type: "cartoon" };
+        setCartoon(cartoonData);
 
-  useEffect(() => {
-    async function fetchCartoons() {
-      try {
-        setLoading(true);
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_Project_TmdApi_Api}/discover/movie?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&with_genres=${selectedCategory}&language=en-US&page=${page}`
+        // Save to history
+        if (user) {
+          const ref = doc(db, "users", user.uid, "history", String(cartoonData.id));
+          await setDoc(ref, {
+            id: cartoonData.id,
+            title: cartoonData.title,
+            poster_path: cartoonData.poster_path,
+            release_date: cartoonData.release_date,
+            viewedAt: new Date().toISOString(),
+          });
+        }
+
+        // Fetch trailer
+        const videoRes = await axios.get(
+          `${process.env.NEXT_PUBLIC_Project_TmdApi_Api}/movie/${id}/videos?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&language=en-US`
         );
-        const data = await res.json();
-        setCartoons(data.results || []);
-        setTotalPages(data.total_pages || 1);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+        const foundTrailer = videoRes.data.results.find(
+          (vid) => vid.type === "Trailer" && vid.site === "YouTube"
+        );
+        setTrailer(foundTrailer);
+      } catch (err) {
+        console.error("API xatolik:", err);
       }
-    }
-    fetchCartoons();
-    router.replace(
-      `/Cartoon?page=${page}&category=${selectedCategory}`,
-      undefined,
-      { scroll: false }
+    };
+
+    if (id) fetchCartoon();
+  }, [id, user]);
+
+  if (!cartoon)
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-neutral-950 text-white">
+        <div className="text-red-500 text-lg animate-pulse">Yuklanmoqda...</div>
+      </div>
     );
-  }, [page, selectedCategory, router]);
 
-  const prevPage = () => setPage((p) => Math.max(p - 1, 1));
-  const nextPage = () => setPage((p) => Math.min(p + 1, totalPages));
+  const { poster_path, title, release_date, vote_average, overview } = cartoon;
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-white">
-      <Navbar />
-      <CartoonSlider />
+    <main className="min-h-screen bg-gradient-to-b from-neutral-950 via-neutral-900 to-black text-white px-4 sm:px-6 lg:px-10 py-10">
+      <div className="max-w-6xl mx-auto">
+        <BackButton />
 
-      <div className="text-center mt-10 mb-6">
-        <h1 className="text-4xl font-extrabold flex justify-center items-center gap-3 text-red-500">
-          <FaRegLaughBeam className="text-red-600" /> Multfilmlar
-        </h1>
-        <p className="text-gray-400 mt-1">
-          Eng yangi va mashhur multfilmlar ro‘yxati
-        </p>
-      </div>
-
-      {/* Categories */}
-      <div className="flex flex-wrap justify-center gap-3 mb-10 px-4">
-        {categories.map((cat) => (
-          <motion.button
-            key={cat.id}
+        {/* Cartoon info */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="flex flex-col md:flex-row gap-10 mt-10"
+        >
+          {/* Poster */}
+          <motion.div
             whileHover={{ scale: 1.05 }}
-            onClick={() => {
-              setSelectedCategory(cat.id);
-              setPage(1);
-            }}
-            className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-              selectedCategory === cat.id
-                ? "bg-red-600 text-white shadow-md"
-                : "bg-neutral-800 text-gray-300 hover:bg-neutral-700"
-            }`}
+            className="w-full md:w-[320px] lg:w-[360px] overflow-hidden rounded-2xl shadow-lg bg-neutral-900"
           >
-            {cat.name}
-          </motion.button>
-        ))}
-      </div>
+            <img
+              src={poster_path ? `${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}/t/p/w500${poster_path}` : "/fallback-poster.png"}
+              alt={title || "Cartoon Poster"}
+              className="w-full h-[400px] sm:h-[480px] lg:h-[520px] object-cover rounded-2xl"
+            />
+          </motion.div>
 
-      {/* Movies Grid */}
-      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 px-6">
-        {loading ? (
-          <p className="text-center col-span-full text-gray-400 text-lg">
-            Yuklanmoqda...
-          </p>
-        ) : cartoons.length > 0 ? (
-          cartoons.map((c) => (
-            <motion.div
-              key={c.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              whileHover={{ scale: 1.03 }}
-              className="bg-neutral-900 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all cursor-pointer"
-            >
-              <Link href={`/Cartoon/${c.id}`}>
-                <img
-                  src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}/t/p/w500${c.poster_path}`}
-                  alt={c.title}
-                  className="w-full h-72 object-cover rounded-t-xl"
-                />
-                <div className="p-3">
-                  <h2 className="font-semibold truncate text-gray-200">
-                    {c.title}
-                  </h2>
-                  <p className="text-sm text-gray-400 flex items-center gap-1 mt-1">
-                    <FaRegCalendarAlt className="text-red-500" />{" "}
-                    {c.release_date}
-                  </p>
-                </div>
-              </Link>
-            </motion.div>
-          ))
-        ) : (
-          <p className="text-center col-span-full text-gray-400 text-lg">
-            Multfilmlar topilmadi 😕
-          </p>
+          {/* Details */}
+          <div className="flex-1 bg-neutral-900/70 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-md hover:shadow-xl transition-shadow duration-300">
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-red-500 mb-2">{title}</h1>
+            <p className="text-gray-400 mb-3">{release_date || "N/A"}</p>
+            <p className="text-gray-200 leading-relaxed mb-4">{overview || "Overview mavjud emas."}</p>
+
+            <div className="flex items-center gap-2 text-red-500 font-semibold text-lg sm:text-xl mb-4">
+              <FaStar /> {vote_average?.toFixed(1) || "0.0"} / 10
+            </div>
+
+            <div className="flex items-center gap-4 mt-4">
+              <LikeButton movie={cartoon} token={token} />
+              <WatchlistButton movie={cartoon} />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Trailer */}
+        {trailer?.key && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            className="mt-14"
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-red-500 flex items-center gap-2">
+              🎬 Trailer
+            </h2>
+            <div className="rounded-xl overflow-hidden shadow-xl border border-white/10">
+              <iframe
+                src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Trailer}/embed/${trailer.key}`}
+                title="YouTube trailer"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-[400px] sm:h-[450px] lg:h-[500px]"
+              ></iframe>
+            </div>
+          </motion.div>
         )}
-      </section>
-
-      {/* Pagination */}
-      <div className="flex justify-center items-center gap-4 mt-10 mb-10">
-        <button
-          onClick={prevPage}
-          disabled={page === 1}
-          className="p-3 bg-neutral-800 rounded-full hover:bg-neutral-700 disabled:opacity-40"
-        >
-          <HiOutlineChevronDoubleLeft className="text-xl text-gray-300" />
-        </button>
-        <span className="text-gray-300 font-medium">
-          Sahifa {page} / {totalPages}
-        </span>
-        <button
-          onClick={nextPage}
-          disabled={page === totalPages}
-          className="p-3 bg-neutral-800 rounded-full hover:bg-neutral-700 disabled:opacity-40"
-        >
-          <HiOutlineChevronDoubleRight className="text-xl text-gray-300" />
-        </button>
       </div>
     </main>
   );

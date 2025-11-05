@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,9 +18,7 @@ export default function Navbar() {
       if (currentUser) {
         const ref = doc(db, "users", currentUser.uid);
         const snap = await getDoc(ref);
-        if (snap.exists()) {
-          setUserRole(snap.data().role);
-        }
+        if (snap.exists()) setUserRole(snap.data().role);
       }
     });
     return () => unsubscribe();
@@ -31,12 +28,12 @@ export default function Navbar() {
     { name: "Home", href: "/" },
     { name: "Movies", href: "/Movies" },
     { name: "Cartoon", href: "/Cartoon" },
-    { name: "Like", href: "/LikedPage" }, // ✅ to‘g‘rilangan link
+    { name: "Like", href: "/LikedPage" },
     { name: "WatchList", href: "/WatchList" },
   ];
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 backdrop-blur-md border-b border-yellow-500/20 shadow-lg">
+    <nav className="fixed top-0 left-0 w-full z-50 bg-gray-900/95 backdrop-blur-md border-b border-gray-800 shadow-lg">
       <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
         {/* LOGO */}
         <Link href="/" className="font-extrabold text-2xl tracking-wide">
@@ -83,7 +80,7 @@ export default function Navbar() {
 
           <li className="relative">
             <Bell className="w-5 h-5 cursor-pointer hover:text-yellow-400 transition-colors" />
-            <span className="absolute -top-1.5 -right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+            <span className="absolute -top-1.5 -right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
           </li>
         </ul>
 
@@ -107,34 +104,36 @@ export default function Navbar() {
       </div>
 
       {/* MOBILE MENU */}
-      {isOpen && (
-        <div className="md:hidden bg-gray-900/95 backdrop-blur-md border-t border-yellow-500/20 shadow-inner px-6 py-4 space-y-4 text-gray-200 animate-fade-in">
-          <Search />
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => setIsOpen(false)}
-              className={`block transition-all ${
-                pathname === item.href
-                  ? "text-yellow-400 font-semibold"
-                  : "hover:text-yellow-300"
-              }`}
-            >
-              {item.name}
-            </Link>
-          ))}
-          {userRole === "admin" && (
-            <Link
-              href="/Admin"
-              onClick={() => setIsOpen(false)}
-              className="block hover:text-yellow-300"
-            >
-              Admin Panel
-            </Link>
-          )}
-        </div>
-      )}
+      <div
+        className={`md:hidden fixed top-16 left-0 w-full bg-gray-900/95 backdrop-blur-md border-t border-gray-800 shadow-inner px-6 py-4 space-y-4 text-gray-200 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <Search />
+        {navItems.map((item) => (
+          <Link
+            key={item.name}
+            href={item.href}
+            onClick={() => setIsOpen(false)}
+            className={`block transition-all ${
+              pathname === item.href
+                ? "text-yellow-400 font-semibold"
+                : "hover:text-yellow-300"
+            }`}
+          >
+            {item.name}
+          </Link>
+        ))}
+        {userRole === "admin" && (
+          <Link
+            href="/Admin"
+            onClick={() => setIsOpen(false)}
+            className="block hover:text-yellow-300"
+          >
+            Admin Panel
+          </Link>
+        )}
+      </div>
     </nav>
   );
 }

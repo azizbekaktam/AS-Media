@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import BackButton from "../components/BackButton";
 import { FaTrash } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function HistoryPage() {
   const [history, setHistory] = useState([]);
@@ -36,7 +37,6 @@ export default function HistoryPage() {
         ...docSnap.data(),
       }));
 
-      // Sort by watchedAt
       setHistory(
         movies.sort(
           (a, b) =>
@@ -52,22 +52,28 @@ export default function HistoryPage() {
   // 🔹 Bitta kinoni o‘chirish
   const handleDelete = async (id) => {
     if (!user) return;
-    const ref = doc(db, "users", user.uid, "history", id);
-    await deleteDoc(ref);
+    try {
+      const ref = doc(db, "users", user.uid, "history", id);
+      await deleteDoc(ref);
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
   };
 
   // 🔹 Barcha tarixni o‘chirish
   const handleClearAll = async () => {
     if (!user || history.length === 0) return;
-
-    const batch = writeBatch(db);
-    history.forEach((movie) => {
-      const ref = doc(db, "users", user.uid, "history", movie.id);
-      batch.delete(ref);
-    });
-
-    await batch.commit();
-    setConfirmClear(false);
+    try {
+      const batch = writeBatch(db);
+      history.forEach((movie) => {
+        const ref = doc(db, "users", user.uid, "history", movie.id);
+        batch.delete(ref);
+      });
+      await batch.commit();
+      setConfirmClear(false);
+    } catch (err) {
+      console.error("Clear all error:", err);
+    }
   };
 
   if (!user)
@@ -79,7 +85,7 @@ export default function HistoryPage() {
 
   return (
     <main className="p-6 min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 max-w-6xl mx-auto">
         <BackButton />
         <h1 className="text-3xl font-bold text-yellow-400 flex items-center gap-2">
           🎬 Ko‘rilganlar Tarixi
@@ -101,10 +107,14 @@ export default function HistoryPage() {
           <p className="text-lg">Hozircha hech qanday kino ko‘rilmagan 😔</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-6 max-w-6xl mx-auto">
           {history.map((movie) => (
-            <div
+            <motion.div
               key={movie.id}
+              layout
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
               className="group relative overflow-hidden rounded-2xl shadow-lg bg-white/10 backdrop-blur-lg border border-white/10 hover:scale-105 transition-transform duration-300"
             >
               <img
@@ -116,7 +126,6 @@ export default function HistoryPage() {
                 alt={movie.title}
                 className="w-full h-72 object-cover rounded-2xl"
               />
-
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button
                   onClick={() => handleDelete(movie.id)}
@@ -125,46 +134,53 @@ export default function HistoryPage() {
                   <FaTrash /> O‘chirish
                 </button>
               </div>
-
               <div className="p-3 text-center">
-                <h2 className="text-white font-semibold truncate">
-                  {movie.title}
-                </h2>
+                <h2 className="text-white font-semibold truncate">{movie.title}</h2>
                 {movie.release_date && (
-                  <p className="text-gray-400 text-sm">
-                    {movie.release_date.slice(0, 4)}
-                  </p>
+                  <p className="text-gray-400 text-sm">{movie.release_date.slice(0, 4)}</p>
                 )}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
 
       {/* 🔴 Tasdiqlash modal */}
-      {confirmClear && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center">
-            <h2 className="text-xl font-semibold mb-4">
-              Barcha tarixni o‘chirmoqchimisiz?
-            </h2>
-            <div className="flex justify-center gap-4">
-              <button
-                onClick={handleClearAll}
-                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
-              >
-                Ha, o‘chir
-              </button>
-              <button
-                onClick={() => setConfirmClear(false)}
-                className="bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded-lg"
-              >
-                Yo‘q, bekor
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {confirmClear && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center"
+            >
+              <h2 className="text-xl font-semibold mb-4">
+                Barcha tarixni o‘chirmoqchimisiz?
+              </h2>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={handleClearAll}
+                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition"
+                >
+                  Ha, o‘chir
+                </button>
+                <button
+                  onClick={() => setConfirmClear(false)}
+                  className="bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded-lg transition"
+                >
+                  Yo‘q, bekor
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
