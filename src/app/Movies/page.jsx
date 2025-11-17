@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
-import {PopularMoviesSlider} from "../components/SliderBase";
+import {PopularMoviesSlider} from "../components/Slider";
 import { motion } from "framer-motion";
 import { HiOutlineChevronDoubleLeft, HiOutlineChevronDoubleRight } from "react-icons/hi";
 import { FaRegCalendarAlt } from "react-icons/fa";

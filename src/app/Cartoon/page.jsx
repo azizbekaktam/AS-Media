@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
-import { CartoonSlider } from "../components/SliderBase";
+import { CartoonSlider } from "../components/Slider";
 
 import { motion } from "framer-motion";
 import { HiOutlineChevronDoubleLeft, HiOutlineChevronDoubleRight } from "react-icons/hi";
