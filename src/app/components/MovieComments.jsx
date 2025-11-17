@@ -5,74 +5,72 @@ import { auth, db } from "../../../firebase";
 import {
   collection,
   query,
-  where,
   orderBy,
   addDoc,
   deleteDoc,
   onSnapshot,
   doc,
-  serverTimestamp,
-  getDoc
+  getDoc,
+  serverTimestamp
 } from "firebase/firestore";
 import { FaTrash } from "react-icons/fa";
 
 export default function MovieComments({ movieId }) {
   const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null); // role & plan
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
 
-  const ADMIN_UID = "YOUR_ADMIN_UID"; // Admin UID
   const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
 
   // 🔹 Auth listener
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(setUser);
+    const unsubscribe = auth.onAuthStateChanged(async (u) => {
+      setUser(u);
+      if (u) {
+        const docSnap = await getDoc(doc(db, "users", u.uid));
+        setUserData(docSnap.data());
+      }
+    });
     return () => unsubscribe();
   }, []);
 
-  // 🔹 Realtime comments listener
+  // 🔹 Real-time comments
   useEffect(() => {
-    const unsubscribeList = [];
+    const commentsRef = collection(db, "comments"); // global comments collection
+    const q = query(commentsRef, orderBy("createdAt", "desc"));
 
-    const listenUsers = async () => {
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      usersSnapshot.forEach((userDoc) => {
-        const commentsRef = collection(db, "users", userDoc.id, "comments");
-        const q = query(commentsRef, where("movieId", "==", movieId), orderBy("createdAt", "desc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-          const updatedComments = snapshot.docs.map((docSnap) => ({
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const updatedComments = snapshot.docs
+        .map((docSnap) => {
+          const data = docSnap.data();
+          if (data.movieId !== movieId) return null;
+          return {
             id: docSnap.id,
-            uid: userDoc.id,
-            ...docSnap.data(),
-            createdAt: docSnap.data().createdAt?.toDate(),
-          }));
+            ...data,
+            createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+          };
+        })
+        .filter(Boolean);
+      setComments(updatedComments);
+    });
 
-          // Merge all comments
-          setComments((prev) => {
-            const others = prev.filter((c) => c.uid !== userDoc.id);
-            return [...others, ...updatedComments].sort((a, b) => b.createdAt - a.createdAt);
-          });
-        });
-        unsubscribeList.push(unsubscribe);
-      });
-    };
-
-    listenUsers();
-
-    return () => unsubscribeList.forEach((u) => u());
+    return () => unsubscribe();
   }, [movieId]);
 
   // 🔹 Add comment
   const handleAddComment = async () => {
     if (!user || !newComment.trim()) return;
+
     try {
-      const commentsRef = collection(db, "users", user.uid, "comments");
+      const commentsRef = collection(db, "comments");
       await addDoc(commentsRef, {
         movieId,
         text: newComment,
         name: user.displayName || "Anonymous",
+        uid: user.uid,
         createdAt: serverTimestamp(),
-        premium: false, // Keyin premium userni true qilamiz
+        premium: userData?.plan === "premium",
       });
       setNewComment("");
     } catch (err) {
@@ -82,10 +80,10 @@ export default function MovieComments({ movieId }) {
 
   // 🔹 Delete comment
   const handleDelete = async (comment) => {
-    if (!user) return;
+    if (!user || !userData) return;
 
     const isOwner = user.uid === comment.uid;
-    const isAdmin = user.uid === ADMIN_UID;
+    const isAdmin = userData.role === "admin";
     const now = new Date();
 
     if (!isOwner && !isAdmin) return alert("Faqat admin yoki siz o'chira olasiz!");
@@ -98,11 +96,19 @@ export default function MovieComments({ movieId }) {
       return alert("Foydalanuvchi 5 kundan oshgan izohni o'chira olmaydi!");
 
     try {
-      const commentRef = doc(db, "users", comment.uid, "comments", comment.id);
+      const commentRef = doc(db, "comments", comment.id);
       await deleteDoc(commentRef);
     } catch (err) {
       console.error("Delete comment error:", err);
     }
+  };
+
+  // 🔹 Random color for users
+  const getUserColor = (uid) => {
+    const colors = ["text-red-400", "text-blue-400", "text-green-400", "text-yellow-400", "text-pink-400"];
+    let hash = 0;
+    for (let i = 0; i < uid.length; i++) hash = uid.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
   };
 
   return (
@@ -138,20 +144,16 @@ export default function MovieComments({ movieId }) {
             className="p-3 rounded-lg border border-gray-700 bg-gray-900 flex justify-between items-start gap-2"
           >
             <div className="flex-1">
-              <p
-                className={`font-semibold ${
-                  c.uid === user?.uid ? "text-yellow-400" : "text-blue-400"
-                }`}
-              >
+              <p className={`font-semibold ${getUserColor(c.uid)}`}>
                 {c.name}
               </p>
               <p className="text-gray-300">{c.text}</p>
               <p className="text-gray-500 text-xs">
-                {c.createdAt?.toLocaleString()}
+                {c.createdAt.toLocaleString()}
                 {c.premium && " ⭐"}
               </p>
             </div>
-            {(user?.uid === c.uid || user?.uid === ADMIN_UID) && (
+            {(user.uid === c.uid || userData?.role === "admin") && (
               <button
                 onClick={() => handleDelete(c)}
                 className="text-red-500 hover:text-red-600"
