@@ -20,17 +20,12 @@ export default function RegPage() {
   const handleRegister = async () => {
     setLoading(true);
     setError("");
+
     try {
       const methods = await fetchSignInMethodsForEmail(auth, email);
 
       if (methods.length > 0) {
-        if (methods.includes("password")) {
-          setError("Bu email allaqachon ro‘yxatdan o‘tgan. Iltimos, login qiling.");
-        } else {
-          setError(
-            `Bu email boshqa usul bilan ro‘yxatdan o‘tgan (${methods.join(", ")}). Shu usul bilan kiring.`
-          );
-        }
+        setError("Bu email allaqachon ro‘yxatdan o‘tgan. Iltimos, login qiling.");
         setLoading(false);
         return;
       }
@@ -46,12 +41,12 @@ export default function RegPage() {
       });
 
       router.push("/LoginPage");
+
     } catch (err) {
-      console.error(err);
       if (err.code === "auth/invalid-email") {
         setError("Email formati noto‘g‘ri.");
       } else if (err.code === "auth/weak-password") {
-        setError("Parol juda zaif (kamida 6 ta belgi bo‘lishi kerak).");
+        setError("Parol juda zaif (kamida 6 ta belgi).");
       } else {
         setError("Ro‘yxatdan o‘tishda xatolik ❌");
       }
@@ -61,18 +56,22 @@ export default function RegPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 px-4">
+    <div className="min-h-screen flex items-center justify-center 
+                    bg-gradient-to-br from-[#0d0d0f] via-[#1a1a1d] to-[#1f1f22] px-4">
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
-        className="bg-gray-900/80 backdrop-blur-md border border-gray-700 rounded-3xl shadow-2xl p-8 max-w-md w-full"
+        transition={{ duration: 0.5 }}
+        className="bg-[#121215]/90 backdrop-blur-xl border border-white/10 
+                   rounded-3xl shadow-2xl p-10 max-w-md w-full"
       >
-        <h2 className="text-4xl font-extrabold text-white text-center mb-4 drop-shadow-md">
+        <h2 className="text-3xl font-extrabold text-white text-center mb-3">
           Ro‘yxatdan o‘tish 🎬
         </h2>
-        <p className="text-gray-300 text-center mb-6">
-          Hisob yaratish orqali kino dunyosiga qo‘shiling!
+
+        <p className="text-gray-400 text-center mb-7">
+          Akkaunt yarating va filmlar olamiga qo‘shiling!
         </p>
 
         <form
@@ -84,36 +83,35 @@ export default function RegPage() {
         >
           <input
             type="email"
-            placeholder="Email"
+            className="inputStyle"
+            placeholder="Email manzilingiz"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="bg-gray-800 border border-gray-600 text-gray-100 placeholder-gray-400 focus:border-gray-400 focus:ring focus:ring-gray-500/30 outline-none p-3 rounded-xl transition"
             required
           />
+
           <input
             type="password"
+            className="inputStyle"
             placeholder="Parol (kamida 6 ta belgi)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="bg-gray-800 border border-gray-600 text-gray-100 placeholder-gray-400 focus:border-gray-400 focus:ring focus:ring-gray-500/30 outline-none p-3 rounded-xl transition"
             required
           />
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-xl shadow-md transition-all duration-300 ${
-              loading ? "opacity-70 cursor-not-allowed" : ""
-            }`}
+            className={`btn-primary ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
           >
-            {loading ? "Yuklanmoqda..." : "Register"}
+            {loading ? "Yuklanmoqda..." : "Ro‘yxatdan o‘tish"}
           </button>
 
           {error && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-red-400 text-center font-medium mt-2 bg-red-900/20 py-2 rounded-lg text-sm"
+              className="text-red-400 text-center font-medium mt-1"
             >
               {error}
             </motion.p>
@@ -121,11 +119,8 @@ export default function RegPage() {
         </form>
 
         <p className="mt-6 text-center text-gray-400 text-sm">
-          Allaqachon akkauntingiz bormi?{" "}
-          <Link
-            href="/LoginPage"
-            className="text-blue-400 font-semibold hover:underline"
-          >
+          Akkauntingiz bormi?{" "}
+          <Link href="/LoginPage" className="text-blue-400 font-semibold hover:underline">
             Login
           </Link>
         </p>

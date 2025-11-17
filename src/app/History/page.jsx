@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { auth, db } from "../../../firebase";
-import {
-  collection,
-  onSnapshot,
-  doc,
-  deleteDoc,
-  writeBatch,
-} from "firebase/firestore";
+import { collection, onSnapshot, doc, deleteDoc, writeBatch } from "firebase/firestore";
 import BackButton from "../components/BackButton";
 import { FaTrash } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,6 +11,7 @@ export default function HistoryPage() {
   const [history, setHistory] = useState([]);
   const [user, setUser] = useState(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [toast, setToast] = useState("");
 
   // 🔹 Auth listener
   useEffect(() => {
@@ -55,8 +50,10 @@ export default function HistoryPage() {
     try {
       const ref = doc(db, "users", user.uid, "history", id);
       await deleteDoc(ref);
+      showToast("Movie o‘chirildi ✅");
     } catch (err) {
       console.error("Delete error:", err);
+      showToast("O‘chirishda xato ❌");
     }
   };
 
@@ -71,10 +68,27 @@ export default function HistoryPage() {
       });
       await batch.commit();
       setConfirmClear(false);
+      showToast("Barcha tarix o‘chirildi ✅");
     } catch (err) {
       console.error("Clear all error:", err);
+      showToast("O‘chirishda xato ❌");
     }
   };
+
+  // 🔹 Toast helper
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 2500);
+  };
+
+  // 🔹 ESC bilan modal yopish
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setConfirmClear(false);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
 
   if (!user)
     return (
@@ -85,6 +99,20 @@ export default function HistoryPage() {
 
   return (
     <main className="p-6 min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white">
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -30 }}
+            className="fixed top-5 right-5 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50"
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex items-center justify-between mb-8 max-w-6xl mx-auto">
         <BackButton />
         <h1 className="text-3xl font-bold text-yellow-400 flex items-center gap-2">
@@ -100,7 +128,6 @@ export default function HistoryPage() {
         )}
       </div>
 
-      {/* Agar tarix bo‘sh bo‘lsa */}
       {history.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
           <p className="text-5xl mb-3">📭</p>
@@ -145,7 +172,7 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {/* 🔴 Tasdiqlash modal */}
+      {/* Tasdiqlash modal */}
       <AnimatePresence>
         {confirmClear && (
           <motion.div

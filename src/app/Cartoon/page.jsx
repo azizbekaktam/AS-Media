@@ -1,139 +1,182 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Navbar from "../components/Navbar";
+import Slider from "../components/Slider";
 import { motion } from "framer-motion";
-import BackButton from "@/app/components/BackButton";
-import LikeButton from "@/app/components/LikeButton";
-import WatchlistButton from "@/app/components/Watchlist";
-import axios from "axios";
-import { useParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import { FaStar } from "react-icons/fa";
-import { auth, db } from "../../../firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { HiOutlineChevronDoubleLeft, HiOutlineChevronDoubleRight } from "react-icons/hi";
+import { FaRegCalendarAlt } from "react-icons/fa";
+import { MdMovie } from "react-icons/md";
 
-export default function CartoonDetail({ token }) {
-  const { id } = useParams();
-  const [cartoon, setCartoon] = useState(null);
-  const [trailer, setTrailer] = useState(null);
-  const [user, setUser] = useState(null);
+export default function CartoonPage() {
+  const router = useRouter();
+  const [page, setPage] = useState(1);
+  const [cartoons, setCartoons] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // User auth
+  const blockedIds = []; // Cartoonlarda kerak bo'lsa filter
+
+  // URL params
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => setUser(currentUser));
-    return () => unsubscribe();
+    const params = new URLSearchParams(window.location.search);
+    setPage(parseInt(params.get("page")) || 1);
+    setSelectedCategory(params.get("category") ? parseInt(params.get("category")) : null);
   }, []);
 
-  // Fetch cartoon data
+  // Fetch genres
   useEffect(() => {
-    const fetchCartoon = async () => {
+    async function fetchGenres() {
       try {
-        const { data } = await axios.get(
-          `${process.env.NEXT_PUBLIC_Project_TmdApi_Api}/movie/${id}?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&language=en-US`
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_Project_TmdApi_Api}/genre/movie/list?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&language=en-US`
         );
-        const cartoonData = { ...data, type: "cartoon" };
-        setCartoon(cartoonData);
-
-        // Save to history
-        if (user) {
-          const ref = doc(db, "users", user.uid, "history", String(cartoonData.id));
-          await setDoc(ref, {
-            id: cartoonData.id,
-            title: cartoonData.title,
-            poster_path: cartoonData.poster_path,
-            release_date: cartoonData.release_date,
-            viewedAt: new Date().toISOString(),
-          });
-        }
-
-        // Fetch trailer
-        const videoRes = await axios.get(
-          `${process.env.NEXT_PUBLIC_Project_TmdApi_Api}/movie/${id}/videos?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&language=en-US`
-        );
-        const foundTrailer = videoRes.data.results.find(
-          (vid) => vid.type === "Trailer" && vid.site === "YouTube"
-        );
-        setTrailer(foundTrailer);
-      } catch (err) {
-        console.error("API xatolik:", err);
+        const data = await res.json();
+        setCategories(data.genres || []);
+      } catch (error) {
+        console.error("Genres olishda xato:", error);
       }
-    };
+    }
+    fetchGenres();
+  }, []);
 
-    if (id) fetchCartoon();
-  }, [id, user]);
+  // Fetch cartoons
+  useEffect(() => {
+    async function fetchCartoons() {
+      try {
+        setLoading(true);
+        const url = `${process.env.NEXT_PUBLIC_Project_TmdApi_Api}/discover/movie?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&language=en-US&page=${page}&with_genres=16${
+          selectedCategory ? `&with_genres=${selectedCategory}` : ""
+        }`;
 
-  if (!cartoon)
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-neutral-950 text-white">
-        <div className="text-red-500 text-lg animate-pulse">Yuklanmoqda...</div>
-      </div>
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const filtered = (data.results || []).filter((c) => !blockedIds.includes(c.id));
+        setCartoons(filtered);
+        setTotalPages(data.total_pages || 1);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCartoons();
+
+    router.replace(
+      `/Cartoon?page=${page}${selectedCategory ? `&category=${selectedCategory}` : ""}`,
+      undefined,
+      { scroll: false }
     );
+  }, [page, selectedCategory, router]);
 
-  const { poster_path, title, release_date, vote_average, overview } = cartoon;
+  const prevPage = () => setPage((p) => Math.max(p - 1, 1));
+  const nextPage = () => setPage((p) => Math.min(p + 1, totalPages));
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-neutral-950 via-neutral-900 to-black text-white px-4 sm:px-6 lg:px-10 py-10">
-      <div className="max-w-6xl mx-auto">
-        <BackButton />
+    <main className="min-h-screen bg-gradient-to-b from-background via-surface to-background text-text">
+      <Navbar />
+      <Slider />
 
-        {/* Cartoon info */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row gap-10 mt-10"
+      {/* Title */}
+      <motion.h1
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center text-4xl sm:text-5xl font-extrabold mt-10 mb-6 flex items-center justify-center gap-2 text-accent"
+      >
+        <MdMovie className="text-5xl sm:text-6xl" /> Cartoons
+      </motion.h1>
+
+      {/* Categories */}
+      <div className="flex flex-wrap gap-3 justify-center mb-12 px-4 sm:px-6 lg:px-8">
+        <button
+          onClick={() => { setSelectedCategory(null); setPage(1); }}
+          className={`px-5 py-2 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 ${
+            selectedCategory === null
+              ? "bg-accent text-black shadow-xl"
+              : "bg-white/5 hover:bg-accent hover:text-black shadow-sm"
+          }`}
         >
-          {/* Poster */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="w-full md:w-[320px] lg:w-[360px] overflow-hidden rounded-2xl shadow-lg bg-neutral-900"
+          Barchasi
+        </button>
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => { setSelectedCategory(cat.id); setPage(1); }}
+            className={`px-5 py-2 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 ${
+              selectedCategory === cat.id
+                ? "bg-accent text-black shadow-xl"
+                : "bg-white/5 hover:bg-accent hover:text-black shadow-sm"
+            }`}
           >
-            <img
-              src={poster_path ? `${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}/t/p/w500${poster_path}` : "/fallback-poster.png"}
-              alt={title || "Cartoon Poster"}
-              className="w-full h-[400px] sm:h-[480px] lg:h-[520px] object-cover rounded-2xl"
-            />
-          </motion.div>
+            {cat.name}
+          </button>
+        ))}
+      </div>
 
-          {/* Details */}
-          <div className="flex-1 bg-neutral-900/70 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-md hover:shadow-xl transition-shadow duration-300">
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-red-500 mb-2">{title}</h1>
-            <p className="text-gray-400 mb-3">{release_date || "N/A"}</p>
-            <p className="text-gray-200 leading-relaxed mb-4">{overview || "Overview mavjud emas."}</p>
-
-            <div className="flex items-center gap-2 text-red-500 font-semibold text-lg sm:text-xl mb-4">
-              <FaStar /> {vote_average?.toFixed(1) || "0.0"} / 10
-            </div>
-
-            <div className="flex items-center gap-4 mt-4">
-              <LikeButton movie={cartoon} token={token} />
-              <WatchlistButton movie={cartoon} />
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Trailer */}
-        {trailer?.key && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="mt-14"
-          >
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-red-500 flex items-center gap-2">
-              🎬 Trailer
-            </h2>
-            <div className="rounded-xl overflow-hidden shadow-xl border border-white/10">
-              <iframe
-                src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Trailer}/embed/${trailer.key}`}
-                title="YouTube trailer"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-[400px] sm:h-[450px] lg:h-[500px]"
-              ></iframe>
-            </div>
-          </motion.div>
+      {/* Cartoons Grid */}
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 px-4 sm:px-6 lg:px-8">
+        {loading ? (
+          <p className="text-center col-span-full text-muted animate-pulse">Yuklanmoqda...</p>
+        ) : cartoons.length > 0 ? (
+          cartoons.map((c) => (
+            <motion.div
+              key={c.id}
+              whileHover={{ scale: 1.05 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="group relative bg-surface rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <Link href={`/Cartoon/${c.id}`}>
+                <img
+                  src={
+                    c.poster_path
+                      ? `${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}/t/p/w500${c.poster_path}`
+                      : "/fallback-poster.png"
+                  }
+                  alt={c.title || "Cartoon Poster"}
+                  className="w-full h-64 sm:h-80 lg:h-96 object-cover group-hover:opacity-80 transition duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-3">
+                  <h2 className="font-semibold text-lg sm:text-xl text-accent truncate">
+                    {c.title}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-muted flex items-center gap-1">
+                    <FaRegCalendarAlt /> {c.release_date || "N/A"}
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
+          ))
+        ) : (
+          <p className="text-center col-span-full text-muted">Cartoons topilmadi 😕</p>
         )}
+      </section>
+
+      {/* Pagination */}
+      <div className="flex justify-center items-center gap-4 mt-12 pb-12">
+        <button
+          onClick={prevPage}
+          disabled={page === 1}
+          className="p-3 bg-white/5 rounded-full disabled:opacity-40 hover:bg-accent hover:text-black transition-all duration-200"
+        >
+          <HiOutlineChevronDoubleLeft className="text-xl sm:text-2xl" />
+        </button>
+        <span className="text-accent font-bold text-lg sm:text-xl">
+          {page} / {totalPages}
+        </span>
+        <button
+          onClick={nextPage}
+          disabled={page === totalPages}
+          className="p-3 bg-white/5 rounded-full disabled:opacity-40 hover:bg-accent hover:text-black transition-all duration-200"
+        >
+          <HiOutlineChevronDoubleRight className="text-xl sm:text-2xl" />
+        </button>
       </div>
     </main>
   );

@@ -18,10 +18,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
-      if (!currentUser) {
-        router.push("/LoginPage");
-        return;
-      }
+      if (!currentUser) return router.push("/LoginPage");
 
       setUser(currentUser);
       try {
@@ -29,20 +26,16 @@ export default function AdminPage() {
         const curData = curSnap.exists() ? curSnap.data() : null;
         setUserData(curData);
 
-        if (!curData || curData.role !== "admin") {
-          router.push("/");
-          return;
-        }
+        if (!curData || curData.role !== "admin") return router.push("/");
 
         await fetchUsers();
       } catch (err) {
-        console.error("Admin check error:", err);
-        showToast("Server bilan bogʻlanishda xato");
+        console.error(err);
+        showToast("Server bilan bogʻlanishda xato ❌");
       } finally {
         setLoading(false);
       }
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -50,11 +43,10 @@ export default function AdminPage() {
     try {
       setLoading(true);
       const qSnap = await getDocs(collection(db, "users"));
-      const arr = qSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setUsers(arr);
+      setUsers(qSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
     } catch (err) {
-      console.error("Fetch users error:", err);
-      showToast("Foydalanuvchilarni yuklashda xato");
+      console.error(err);
+      showToast("Foydalanuvchilarni yuklashda xato ❌");
     } finally {
       setLoading(false);
     }
@@ -104,11 +96,7 @@ export default function AdminPage() {
 
   const q = search.trim().toLowerCase();
   const filteredUsers = users
-    .filter((u) => {
-      const email = (u?.email ?? "").toLowerCase();
-      const name = (u?.name ?? "").toLowerCase();
-      return email.includes(q) || name.includes(q);
-    })
+    .filter((u) => (u?.email?.toLowerCase().includes(q) || u?.name?.toLowerCase().includes(q)))
     .filter((u) => {
       if (filter === "all") return true;
       if (filter === "admin") return u?.role === "admin";
@@ -153,9 +141,7 @@ export default function AdminPage() {
                 key={f.key}
                 onClick={() => setFilter(f.key)}
                 className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                  filter === f.key
-                    ? "bg-red-500 text-white shadow-lg"
-                    : "bg-neutral-800 text-gray-300 hover:bg-neutral-700"
+                  filter === f.key ? "bg-red-500 text-white shadow-lg" : "bg-neutral-800 text-gray-300 hover:bg-neutral-700"
                 }`}
               >
                 {f.label}
@@ -181,16 +167,11 @@ export default function AdminPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" className="p-6 text-center text-gray-400">
-                  Yuklanmoqda...
-                </td>
+                <td colSpan="6" className="p-6 text-center text-gray-400">Yuklanmoqda...</td>
               </tr>
             ) : filteredUsers.length > 0 ? (
               filteredUsers.map((u, i) => (
-                <tr
-                  key={u.id}
-                  className="border-b border-neutral-800 hover:bg-neutral-800 transition-all"
-                >
+                <tr key={u.id} className="border-b border-neutral-800 hover:bg-neutral-800 transition-all">
                   <td className="p-3">{i + 1}</td>
                   <td className="p-3 font-medium">{u?.name || (u?.email || "").split("@")[0]}</td>
                   <td className="p-3 text-gray-400">{u?.email || "—"}</td>
@@ -215,10 +196,7 @@ export default function AdminPage() {
                     </select>
                   </td>
                   <td className="p-3 text-center">
-                    <button
-                      onClick={() => handleDelete(u.id)}
-                      className="text-red-500 hover:text-red-400 transition-all"
-                    >
+                    <button onClick={() => handleDelete(u.id)} className="text-red-500 hover:text-red-400 transition-all">
                       <Trash2 className="inline-block w-5 h-5" />
                     </button>
                   </td>

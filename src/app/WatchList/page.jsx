@@ -15,10 +15,9 @@ export default function WatchlistPage() {
 
   const handleDelete = async (id) => {
     if (!user) return;
+    if (!confirm("Bu kinoni watchlistdan o‘chirmoqchimisiz?")) return;
 
     try {
-      if (!confirm("Bu kinoni watchlistdan o‘chirmoqchimisiz?")) return;
-
       const movieRef = doc(db, "users", user.uid, "watchlist", id.toString());
       await deleteDoc(movieRef);
       setWatchlist((prev) => prev.filter((movie) => movie.id !== id));
@@ -66,7 +65,7 @@ export default function WatchlistPage() {
     );
 
   return (
-    <div className="p-4 min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
+    <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
       <BackButton />
       <h1 className="text-3xl font-bold mb-6 flex items-center gap-3 text-yellow-400 drop-shadow-lg">
         <FaBookmark /> My Watchlist
@@ -79,32 +78,36 @@ export default function WatchlistPage() {
       )}
 
       {watchlist.length === 0 ? (
-        <p className="text-gray-400 text-lg mt-10 text-center">
-          Hech qanday kino qo‘shilmagan 😔
-        </p>
+        <div className="flex flex-col items-center justify-center mt-20 text-gray-400">
+          <p className="text-5xl mb-3">📭</p>
+          <p className="text-lg">Hech qanday kino qo‘shilmagan 😔</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {watchlist.map((movie) => (
             <div
               key={movie.id}
-              className="bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-transform transform hover:scale-105"
+              className="bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-transform transform hover:scale-105"
             >
               {movie.poster_path ? (
                 <img
-                  src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
+                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                   alt={movie.title}
-                  className="w-full h-72 object-cover"
+                  className="w-full h-80 object-cover rounded-t-2xl"
                 />
               ) : (
-                <div className="w-full h-72 bg-gray-700 flex items-center justify-center text-gray-400">
+                <div className="w-full h-80 bg-gray-700 flex items-center justify-center text-gray-400 text-lg">
                   No Image
                 </div>
               )}
 
-              <div className="p-4 space-y-2">
-                <h2 className="text-lg font-bold truncate">{movie.title}</h2>
-                <p className="text-gray-400 text-sm">{movie.release_date}</p>
-
+              <div className="p-4 flex flex-col justify-between h-44">
+                <div>
+                  <h2 className="text-lg font-bold truncate">{movie.title}</h2>
+                  {movie.release_date && (
+                    <p className="text-gray-400 text-sm">{movie.release_date.slice(0, 4)}</p>
+                  )}
+                </div>
                 <div className="flex gap-2 mt-3">
                   <a
                     href={`/Movies/${movie.id}`}

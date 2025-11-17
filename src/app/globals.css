@@ -1,53 +1,16 @@
 @import "tailwindcss";
 
+@layer components {
+  .inputStyle {
+    @apply w-full border border-white/10 bg-[#1c1c1f]
+    text-gray-200 placeholder-gray-500 
+    focus:border-gray-400 focus:ring focus:ring-gray-500/20 
+    outline-none p-3 rounded-xl transition;
+  }
 
-
-/* body {
-  @apply bg-white text-black;
+  .btn-primary {
+    @apply w-full bg-[#2a2a2d] hover:bg-[#343437]
+    text-white font-semibold py-3 rounded-xl shadow-md
+    transition-all duration-300;
+  }
 }
-
-.dark body {
-  @apply bg-black text-red;
-} */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fadeIn {
-  animation: fadeIn 0.25s ease-out;
-}
-
-.loader, .loader:before, .loader:after {
-  border-radius: 51%;
-  width: 2.5em;
-  height: 2.5em;
-  animation-fill-mode: both;
-  animation: bblFadInOut 1.8s infinite ease-in-out;
-}
-.loader {
-  color: #FFF;
-  font-size: 7px;
-  position: relative;
-  text-indent: -9999em;
-  transform: translateZ(0);
-  animation-delay: -0.16s;
-}
-.loader:before,
-.loader:after {
-  content: '';
-  position: absolute;
-  top: 0;
-}
-.loader:before {
-  left: -3.5em;
-  animation-delay: -0.32s;
-}
-.loader:after {
-  left: 3.5em;
-}
-
-@keyframes bblFadInOut {
-  0%, 80%, 100% { box-shadow: 0 2.5em 0 -1.3em }
-  40% { box-shadow: 0 2.5em 0 0 }
-}
-    

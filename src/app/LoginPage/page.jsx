@@ -17,24 +17,19 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setLoading(true);
     setError("");
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
       const token = await user.getIdToken();
       localStorage.setItem("token", token);
 
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        localStorage.setItem("role", userData.role || "user");
-      } else {
-        localStorage.setItem("role", "user");
-      }
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      localStorage.setItem("role", userSnap.exists() ? userSnap.data().role : "user");
 
       router.push("/Movies");
-    } catch (err) {
+    } catch (error) {
       setError("Email yoki parol noto‘g‘ri ❌");
     } finally {
       setLoading(false);
@@ -42,21 +37,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 px-4">
+    <div className="min-h-screen flex items-center justify-center 
+                    bg-gradient-to-br from-[#0d0d0f] via-[#1a1a1d] to-[#1f1f22] px-4">
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
-        className="bg-gray-900/80 backdrop-blur-md border border-gray-700 rounded-3xl shadow-2xl p-8 max-w-md w-full"
+        transition={{ duration: 0.5 }}
+        className="bg-[#121215]/90 backdrop-blur-xl border border-white/10 
+                   rounded-3xl shadow-2xl p-10 max-w-md w-full"
       >
-        <h2 className="text-4xl font-extrabold text-white text-center mb-4 drop-shadow-md">
-          Kino Dunyosiga Xush Kelibsiz 🎬
+        <h2 className="text-3xl font-extrabold text-white text-center mb-3">
+          As-Media 🎬
         </h2>
-        <p className="text-gray-300 text-center mb-6">
-          Hisobingizga kirish orqali barcha filmlarni kuzatib boring!
+
+        <p className="text-gray-400 text-center mb-7">
+          Hisobingizga kiring va filmlardan rohatlaning!
         </p>
 
-        <motion.form
+        <form
           onSubmit={(e) => {
             e.preventDefault();
             handleLogin();
@@ -65,49 +64,45 @@ export default function LoginPage() {
         >
           <input
             type="email"
-            placeholder="Email"
+            className="inputStyle"
+            placeholder="Email manzilingiz"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="border border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400 focus:border-gray-400 focus:ring focus:ring-gray-500/30 outline-none p-3 rounded-xl transition"
             required
           />
+
           <input
             type="password"
-            placeholder="Parol"
+            className="inputStyle"
+            placeholder="Parolingiz"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="border border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400 focus:border-gray-400 focus:ring focus:ring-gray-500/30 outline-none p-3 rounded-xl transition"
             required
           />
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-xl shadow-md transition-all duration-300 ${
-              loading ? "opacity-70 cursor-not-allowed" : ""
-            }`}
+            className={`btn-primary ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
           >
-            {loading ? "Yuklanmoqda..." : "Login"}
+            {loading ? "Yuklanmoqda..." : "Kirish"}
           </button>
 
           {error && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-red-400 text-center font-medium mt-2"
+              className="text-red-400 text-center font-medium mt-1"
             >
               {error}
             </motion.p>
           )}
-        </motion.form>
+        </form>
 
         <p className="mt-6 text-center text-gray-400 text-sm">
-          Hali ro‘yxatdan o‘tmaganmisiz?{" "}
-          <Link
-            href="/RegPage"
-            className="text-blue-400 font-semibold hover:underline"
-          >
-            Ro‘yxatdan o‘tish
+          Profilingiz yo‘qmi?{" "}
+          <Link href="/RegPage" className="text-blue-400 font-semibold hover:underline">
+            Ro‘yxatdan o‘ting
           </Link>
         </p>
       </motion.div>

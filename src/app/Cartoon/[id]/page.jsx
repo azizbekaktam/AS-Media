@@ -89,7 +89,7 @@ export default function CartoonDetail({ token }) {
           {/* Poster */}
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="w-full md:w-[320px] lg:w-[360px] overflow-hidden rounded-2xl shadow-lg bg-neutral-900"
+            className="w-full md:w-[320px] lg:w-[360px] overflow-hidden rounded-2xl shadow-2xl bg-neutral-900 border border-white/10"
           >
             <img
               src={poster_path ? `${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Img}/t/p/w500${poster_path}` : "/fallback-poster.png"}
@@ -99,15 +99,17 @@ export default function CartoonDetail({ token }) {
           </motion.div>
 
           {/* Details */}
-          <div className="flex-1 bg-neutral-900/70 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-md hover:shadow-xl transition-shadow duration-300 space-y-4">
+          <div className="flex-1 bg-neutral-900/70 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-lg hover:shadow-2xl transition-shadow duration-300 space-y-4">
             <h1 className="text-4xl sm:text-5xl font-extrabold text-red-500">{title}</h1>
             <p className="text-gray-400 text-lg">{release_date || "N/A"}</p>
             <p className="text-gray-200 leading-relaxed">{overview || "Overview mavjud emas."}</p>
 
+            {/* Rating */}
             <div className="flex items-center gap-2 text-red-500 font-semibold text-lg sm:text-xl">
               <FaStar /> {vote_average?.toFixed(1) || "0.0"} / 10
             </div>
 
+            {/* Action Buttons */}
             <div className="flex flex-wrap gap-4 mt-4">
               <LikeButton movie={cartoon} token={token} />
               <WatchlistButton movie={cartoon} />
@@ -126,7 +128,7 @@ export default function CartoonDetail({ token }) {
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-red-500 flex items-center gap-2">
               🎬 Trailer
             </h2>
-            <div className="rounded-xl overflow-hidden shadow-xl border border-white/10">
+            <div className="rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-neutral-900">
               <iframe
                 src={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Trailer}/embed/${trailerKey}`}
                 title="YouTube trailer"

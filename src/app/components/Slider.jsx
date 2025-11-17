@@ -1,140 +1,153 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { HiArrowCircleRight, HiArrowCircleLeft } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function Slider() {
-  const [movies, setMovies] = useState([]);
+const SliderBase = ({ fetchUrl, genreTitle }) => {
+  const [items, setItems] = useState([]);
   const [current, setCurrent] = useState(0);
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
-  // API dan ma'lumot olish
+  // 🔹 API dan ma'lumot olish
   useEffect(() => {
     axios
-      .get(
-        `${process.env.NEXT_PUBLIC_Project_TmdApi_Api}/movie/popular?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&language=en-US&page=1`
-      )
-      .then((res) => setMovies(res.data.results))
+      .get(fetchUrl)
+      .then((res) => setItems(res.data.results))
       .catch((err) => console.error(err));
-  }, []);
+  }, [fetchUrl]);
 
-  // Auto-slide
+  // 🔹 Auto-slide
   useEffect(() => {
-    if (movies.length === 0) return;
+    if (!items.length) return;
     const interval = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % movies.length);
+      setCurrent((prev) => (prev + 1) % items.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [movies]);
+  }, [items]);
 
-  const nextSlide = () => setCurrent((prev) => (prev + 1) % movies.length);
+  // 🔹 Navigation
+  const nextSlide = () => setCurrent((prev) => (prev + 1) % items.length);
   const prevSlide = () =>
-    setCurrent((prev) => (prev - 1 + movies.length) % movies.length);
+    setCurrent((prev) => (prev - 1 + items.length) % items.length);
 
-  // Touch events for mobile swipe
-  const handleTouchStart = (e) => setTouchStart(e.touches[0].clientX);
-  const handleTouchMove = (e) => setTouchEnd(e.touches[0].clientX);
+  // 🔹 Swipe events
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
   const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    if (touchStart - touchEnd > 50) nextSlide(); // swipe left
-    if (touchEnd - touchStart > 50) prevSlide(); // swipe right
-    setTouchStart(null);
-    setTouchEnd(null);
+    const deltaX = touchEndX.current - touchStartX.current;
+    if (deltaX > 50) prevSlide();
+    else if (deltaX < -50) nextSlide();
   };
 
-  if (!movies.length)
+  if (!items.length)
     return (
-      <div className="w-full h-[480px] flex items-center justify-center text-gray-400">
-        Loading movies...
+      <div className="flex justify-center items-center h-[420px] text-gray-400">
+        Loading {genreTitle || "items"}...
       </div>
     );
 
-  const currentMovie = movies[current];
+  const currentItem = items[current];
 
   return (
-    <div
-      className="relative w-full h-[480px] mt-6 overflow-hidden rounded-3xl shadow-2xl"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      <AnimatePresence mode="wait">
-        <motion.img
-          key={currentMovie.id}
-          src={`https://image.tmdb.org/t/p/original${currentMovie.backdrop_path}`}
-          alt={currentMovie.title}
-          initial={{ opacity: 0, x: 100 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -100 }}
-          transition={{ duration: 0.8 }}
-          className="absolute w-full h-full object-cover brightness-75 rounded-3xl"
-        />
-      </AnimatePresence>
+    <section className="relative w-full mt-10">
+      <h2 className="text-3xl md:text-4xl font-extrabold text-yellow-400 mb-6 text-center drop-shadow-lg">
+        {genreTitle}
+      </h2>
 
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent rounded-3xl"></div>
-
-      {/* Movie Info */}
-      <div className="absolute bottom-16 left-6 md:left-12 text-white max-w-[70%] space-y-3">
-        <motion.h2
-          key={currentMovie.id + "title"}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          whileHover={{ scale: 1.05, color: "#FACC15" }}
-          transition={{ duration: 0.5 }}
-          className="text-2xl md:text-4xl font-extrabold drop-shadow-xl leading-tight cursor-pointer"
-        >
-          {currentMovie.title}
-        </motion.h2>
-        <motion.p
-          key={currentMovie.id + "desc"}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="hidden md:block text-gray-300 text-sm md:text-base line-clamp-2"
-        >
-          {currentMovie.overview || "No description available."}
-        </motion.p>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="px-5 py-2.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black font-semibold shadow-md transition-all"
-        >
-          ▶ Watch Now
-        </motion.button>
-      </div>
-
-      {/* Navigation buttons */}
-      <button
-        onClick={prevSlide}
-        className="absolute top-1/2 left-4 -translate-y-1/2 bg-black/50 hover:bg-black/80 p-3 rounded-full shadow-lg backdrop-blur-sm text-white transition-all duration-300 hover:scale-110"
+      <div
+        className="relative w-full h-[420px] md:h-[520px] overflow-hidden rounded-3xl shadow-2xl group bg-gray-900"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        <HiArrowCircleLeft size={32} />
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute top-1/2 right-4 -translate-y-1/2 bg-black/50 hover:bg-black/80 p-3 rounded-full shadow-lg backdrop-blur-sm text-white transition-all duration-300 hover:scale-110"
-      >
-        <HiArrowCircleRight size={32} />
-      </button>
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={currentItem.id}
+            src={
+              currentItem.backdrop_path ||
+              currentItem.poster_path
+                ? `https://image.tmdb.org/t/p/original${
+                    currentItem.backdrop_path || currentItem.poster_path
+                  }`
+                : "/no-image.jpg"
+            }
+            alt={currentItem.title}
+            className="absolute w-full h-full object-cover rounded-3xl"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.8 }}
+          />
+        </AnimatePresence>
 
-      {/* Indicator dots */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
-        {movies.map((_, i) => (
-          <div
-            key={i}
-            onClick={() => setCurrent(i)}
-            className={`w-3 h-3 rounded-full cursor-pointer transition-all duration-300 ${
-              i === current
-                ? "bg-yellow-400 shadow-md scale-125"
-                : "bg-gray-400/70 hover:bg-yellow-300"
-            }`}
-          ></div>
-        ))}
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent rounded-3xl"></div>
+
+        {/* Text Info */}
+        <div className="absolute bottom-16 left-6 sm:left-12 text-white max-w-[70%] space-y-2">
+          <h3 className="text-2xl md:text-4xl font-bold drop-shadow-lg">
+            {currentItem.title}
+          </h3>
+          <p className="text-gray-300 text-sm sm:text-base line-clamp-3">
+            {currentItem.overview || "No description available."}
+          </p>
+          <button className="mt-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black font-semibold shadow-md transition-all">
+            Watch Now
+          </button>
+        </div>
+
+        {/* Left & Right Buttons */}
+        <button
+          onClick={prevSlide}
+          className="absolute top-1/2 left-4 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-3 rounded-full backdrop-blur-sm transition-shadow shadow-lg"
+        >
+          <HiArrowCircleLeft size={30} />
+        </button>
+        <button
+          onClick={nextSlide}
+          className="absolute top-1/2 right-4 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-3 rounded-full backdrop-blur-sm transition-shadow shadow-lg"
+        >
+          <HiArrowCircleRight size={30} />
+        </button>
+
+        {/* Indicator Dots */}
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
+          {items.map((_, i) => (
+            <motion.div
+              key={i}
+              onClick={() => setCurrent(i)}
+              className="w-3 h-3 rounded-full cursor-pointer"
+              animate={{
+                backgroundColor: i === current ? "#FACC15" : "rgba(156,163,175,1)",
+                scale: i === current ? 1.2 : 1,
+              }}
+              transition={{ duration: 0.3 }}
+            ></motion.div>
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
-}
+};
+
+// 🔹 Cartoon Slider
+export const CartoonSlider = () => (
+  <SliderBase
+    fetchUrl={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api}/discover/movie?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&with_genres=16&language=en-US&page=1`}
+    genreTitle="🎞️ Top Cartoons"
+  />
+);
+
+// 🔹 Popular Movies Slider
+export const PopularMoviesSlider = () => (
+  <SliderBase
+    fetchUrl={`${process.env.NEXT_PUBLIC_Project_TmdApi_Api}/movie/popular?api_key=${process.env.NEXT_PUBLIC_Project_TmdApi_Api_Key}&language=en-US&page=1`}
+    genreTitle="🎬 Popular Movies"
+  />
+);

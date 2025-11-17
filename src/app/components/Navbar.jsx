@@ -7,6 +7,7 @@ import Search from "./Search";
 import UserProfile from "./UserPage";
 import { auth, db } from "../../../firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,7 +38,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
         {/* LOGO */}
         <Link href="/" className="font-extrabold text-2xl tracking-wide">
-          <span className="bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent transition-all hover:from-yellow-300 hover:to-yellow-500">
             AsMedia
           </span>
         </Link>
@@ -47,7 +48,7 @@ export default function Navbar() {
           {navItems.map((item) => (
             <Link key={item.name} href={item.href} className="relative group">
               <li
-                className={`cursor-pointer transition-all duration-300 ${
+                className={`cursor-pointer transition-all duration-500 ease-in-out ${
                   pathname === item.href
                     ? "text-yellow-400 font-semibold"
                     : "hover:text-yellow-300"
@@ -56,7 +57,7 @@ export default function Navbar() {
                 {item.name}
               </li>
               <span
-                className={`absolute left-0 -bottom-1 h-[2px] bg-yellow-400 rounded-full transition-all duration-300 ${
+                className={`absolute left-0 -bottom-1 h-[2px] bg-yellow-400 rounded-full transition-all duration-500 ease-in-out ${
                   pathname === item.href ? "w-full" : "w-0 group-hover:w-full"
                 }`}
               ></span>
@@ -66,7 +67,7 @@ export default function Navbar() {
           {userRole === "admin" && (
             <Link href="/Admin" className="relative group">
               <li
-                className={`cursor-pointer transition-all duration-300 ${
+                className={`cursor-pointer transition-all duration-500 ease-in-out ${
                   pathname === "/Admin"
                     ? "text-yellow-400 font-semibold"
                     : "hover:text-yellow-300"
@@ -74,12 +75,13 @@ export default function Navbar() {
               >
                 Admin
               </li>
-              <span className="absolute left-0 -bottom-1 w-0 group-hover:w-full h-[2px] bg-yellow-400 transition-all duration-300"></span>
+              <span className="absolute left-0 -bottom-1 w-0 group-hover:w-full h-[2px] bg-yellow-400 transition-all duration-500 ease-in-out"></span>
             </Link>
           )}
 
+          {/* Bell Notification */}
           <li className="relative">
-            <Bell className="w-5 h-5 cursor-pointer hover:text-yellow-400 transition-colors" />
+            <Bell className="w-5 h-5 cursor-pointer hover:text-yellow-400 transition-all duration-300 hover:scale-110" />
             <span className="absolute -top-1.5 -right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
           </li>
         </ul>
@@ -90,13 +92,13 @@ export default function Navbar() {
             <Search />
           </div>
 
-          <div className="w-10 h-10 rounded-full border-2 border-yellow-500 overflow-hidden">
+          <div className="w-10 h-10 rounded-full border-2 border-yellow-500 overflow-hidden transition-all hover:scale-105 hover:ring-2 hover:ring-yellow-500">
             <UserProfile />
           </div>
 
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-yellow-400 hover:text-yellow-300 transition"
+            className="md:hidden text-yellow-400 hover:text-yellow-300 transition-all hover:scale-110"
           >
             {isOpen ? <X size={26} /> : <Menu size={26} />}
           </button>
@@ -104,36 +106,41 @@ export default function Navbar() {
       </div>
 
       {/* MOBILE MENU */}
-      <div
-        className={`md:hidden fixed top-16 left-0 w-full bg-gray-900/95 backdrop-blur-md border-t border-gray-800 shadow-inner px-6 py-4 space-y-4 text-gray-200 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
-        }`}
-      >
-        <Search />
-        {navItems.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            onClick={() => setIsOpen(false)}
-            className={`block transition-all ${
-              pathname === item.href
-                ? "text-yellow-400 font-semibold"
-                : "hover:text-yellow-300"
-            }`}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            className="md:hidden fixed top-16 left-0 w-full bg-gray-900/95 backdrop-blur-md border-t border-gray-800 shadow-inner px-6 py-4 space-y-4 text-gray-200"
           >
-            {item.name}
-          </Link>
-        ))}
-        {userRole === "admin" && (
-          <Link
-            href="/Admin"
-            onClick={() => setIsOpen(false)}
-            className="block hover:text-yellow-300"
-          >
-            Admin Panel
-          </Link>
+            <Search />
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className={`block transition-all duration-500 ${
+                  pathname === item.href
+                    ? "text-yellow-400 font-semibold"
+                    : "hover:text-yellow-300"
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+            {userRole === "admin" && (
+              <Link
+                href="/Admin"
+                onClick={() => setIsOpen(false)}
+                className="block hover:text-yellow-300 transition-all duration-500"
+              >
+                Admin Panel
+              </Link>
+            )}
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </nav>
   );
 }
