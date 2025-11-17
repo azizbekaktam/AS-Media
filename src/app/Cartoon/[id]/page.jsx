@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import BackButton from "@/app/components/BackButton";
 import LikeButton from "@/app/components/LikeButton";
 import WatchlistButton from "@/app/components/Watchlist";
+import MovieComments from "@/app/components/MovieComments";
+
 import { FaStar } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { db } from "../../../../firebase";
@@ -115,6 +117,12 @@ export default function CartoonDetail({ token }) {
               <WatchlistButton movie={cartoon} />
             </div>
           </div>
+          <div className="mt-14">
+  <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-accent">
+    💬 Comments
+  </h2>
+  <MovieComments movieId={movie.id} />
+</div>
         </motion.div>
 
         {/* Trailer */}

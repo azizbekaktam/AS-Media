@@ -115,16 +115,19 @@ export default function LikesPage() {
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: -30 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -30 }}
-            className="fixed top-5 right-5 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50"
+            exit={{ opacity: 0, y: -20 }}
+            className={`fixed top-5 right-5 px-6 py-3 rounded-xl shadow-lg text-white font-semibold z-50 ${
+              toast.includes("❌") ? "bg-red-500" : "bg-green-500"
+            }`}
           >
             {toast}
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Header */}
       <div className="flex items-center justify-between mb-6 max-w-6xl mx-auto">
         <BackButton />
         <h1 className="text-3xl font-extrabold flex items-center gap-3 text-red-500">
@@ -139,7 +142,7 @@ export default function LikesPage() {
           placeholder="🔍 Search by title"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="p-3 rounded-xl w-full sm:w-1/2 bg-gray-800 border border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+          className="p-3 rounded-xl w-full sm:w-1/2 bg-gray-800 border border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
         />
         <div className="flex gap-2 flex-wrap justify-center">
           {genres.map((g) => (
@@ -158,7 +161,7 @@ export default function LikesPage() {
         </div>
       </div>
 
-      {/* Likes grid */}
+      {/* Likes Grid */}
       {likes.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
           <FaRegHeart className="text-6xl text-gray-600 mb-4" />
@@ -174,33 +177,29 @@ export default function LikesPage() {
           axis="y"
           values={filteredLikes}
           onReorder={setLikes}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 max-w-6xl mx-auto"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 max-w-6xl mx-auto"
         >
           <AnimatePresence>
             {filteredLikes.map((movie) => (
-              <Reorder.Item
-                key={movie.id}
-                value={movie}
-                whileDrag={{ scale: 1.05, zIndex: 50 }}
-              >
+              <Reorder.Item key={movie.id} value={movie}>
                 <motion.div
                   layout
-                  whileHover={{ scale: 1.03 }}
-                  className="relative bg-white/5 hover:bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden shadow-lg hover:shadow-red-500/30 border border-white/10 transition-all duration-300"
+                  whileHover={{ scale: 1.05 }}
+                  className="relative bg-gradient-to-t from-gray-900/80 to-transparent rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300"
                 >
                   <img
-                    src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "/fallback-poster.png"}
+                    src={
+                      movie.poster_path
+                        ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                        : "/fallback-poster.png"
+                    }
                     alt={movie.title}
                     className="w-full h-72 object-cover rounded-t-2xl"
                   />
-                  <div className="p-4 flex flex-col justify-between h-32">
-                    <div>
-                      <h2 className="font-semibold text-white truncate">
-                        {movie.title}
-                      </h2>
-                      <p className="text-gray-400 text-sm">{movie.release_date}</p>
-                    </div>
-                    <div className="flex gap-2 mt-3">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                    <h2 className="font-bold text-white text-lg truncate">{movie.title}</h2>
+                    <p className="text-gray-300 text-sm">{movie.release_date}</p>
+                    <div className="flex gap-2 mt-2">
                       <a
                         href={`/Movies/${movie.id}`}
                         className="flex-1 bg-red-500/90 hover:bg-red-600 text-white text-center py-1.5 rounded-lg font-medium transition shadow-md hover:shadow-red-500/40"
@@ -222,7 +221,7 @@ export default function LikesPage() {
         </Reorder.Group>
       )}
 
-      {/* Delete confirmation modal */}
+      {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {confirmDelete && (
           <motion.div
@@ -235,12 +234,10 @@ export default function LikesPage() {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-2xl text-center"
+              className="bg-gray-900/90 backdrop-blur-lg p-6 rounded-2xl border border-gray-700 shadow-2xl text-center"
             >
-              <h2 className="text-xl font-semibold mb-4">
-                Rostdan o‘chirmoqchimisiz?
-              </h2>
-              <div className="flex justify-center gap-4">
+              <h2 className="text-xl font-bold mb-4 text-white">Rostdan o‘chirmoqchimisiz?</h2>
+              <div className="flex gap-4 justify-center">
                 <button
                   onClick={() => handleDelete(confirmDelete)}
                   className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition"
@@ -249,9 +246,9 @@ export default function LikesPage() {
                 </button>
                 <button
                   onClick={() => setConfirmDelete(null)}
-                  className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg transition"
+                  className="bg-gray-700 hover:bg-gray-800 px-4 py-2 rounded-lg transition"
                 >
-                  Yo‘q, bekor
+                  Bekor
                 </button>
               </div>
             </motion.div>

@@ -4,6 +4,9 @@ import { motion } from "framer-motion";
 import BackButton from "@/app/components/BackButton";
 import LikeButton from "@/app/components/LikeButton";
 import WatchlistButton from "@/app/components/Watchlist";
+import MovieComments from "@/app/components/MovieComments";
+
+
 import axios from "axios";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -119,6 +122,12 @@ export default function MovieDetail({ token }) {
               <LikeButton movie={movie} token={token} />
               <WatchlistButton movie={movie} />
             </div>
+            <div className="mt-14">
+  <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-accent">
+    💬 Comments
+  </h2>
+  <MovieComments movieId={movie.id} />
+</div>
           </div>
         </motion.div>
 

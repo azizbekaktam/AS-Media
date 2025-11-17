@@ -6,12 +6,19 @@ import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
 
 import { FaBookmark } from "react-icons/fa";
 import BackButton from "../components/BackButton";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function WatchlistPage() {
   const [watchlist, setWatchlist] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 2500);
+  };
 
   const handleDelete = async (id) => {
     if (!user) return;
@@ -21,12 +28,15 @@ export default function WatchlistPage() {
       const movieRef = doc(db, "users", user.uid, "watchlist", id.toString());
       await deleteDoc(movieRef);
       setWatchlist((prev) => prev.filter((movie) => movie.id !== id));
+      showToast("Movie watchlistdan o‘chirildi ✅");
     } catch (err) {
       console.error("Error deleting movie:", err);
       setError("Xatolik yuz berdi. Qayta urinib ko‘ring!");
+      showToast("Xatolik yuz berdi ❌");
     }
   };
 
+  // Auth check
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
@@ -35,6 +45,7 @@ export default function WatchlistPage() {
     return () => unsubscribe();
   }, []);
 
+  // Fetch watchlist
   useEffect(() => {
     const fetchWatchlist = async () => {
       if (!user) return;
@@ -45,6 +56,7 @@ export default function WatchlistPage() {
       } catch (err) {
         console.error("Error fetching watchlist:", err);
         setError("Watchlistni yuklashda xatolik yuz berdi!");
+        showToast("Watchlist yuklanmadi ❌");
       }
     };
     fetchWatchlist();
@@ -66,6 +78,22 @@ export default function WatchlistPage() {
 
   return (
     <div className="p-6 min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`fixed top-5 right-5 px-6 py-3 rounded-xl shadow-lg text-white font-semibold z-50 ${
+              toast.includes("❌") ? "bg-red-500" : "bg-green-500"
+            }`}
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <BackButton />
       <h1 className="text-3xl font-bold mb-6 flex items-center gap-3 text-yellow-400 drop-shadow-lg">
         <FaBookmark /> My Watchlist
@@ -85,9 +113,11 @@ export default function WatchlistPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {watchlist.map((movie) => (
-            <div
+            <motion.div
               key={movie.id}
-              className="bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-transform transform hover:scale-105"
+              layout
+              whileHover={{ scale: 1.05 }}
+              className="bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-transform transform"
             >
               {movie.poster_path ? (
                 <img
@@ -123,7 +153,7 @@ export default function WatchlistPage() {
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
