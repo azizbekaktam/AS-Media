@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
-import SliderBase from "../components/SliderBase";
+import { CartoonSlider } from "../components/SliderBase";
+
 import { motion } from "framer-motion";
 import { HiOutlineChevronDoubleLeft, HiOutlineChevronDoubleRight } from "react-icons/hi";
 import { FaRegCalendarAlt } from "react-icons/fa";
@@ -80,7 +81,7 @@ export default function CartoonPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background via-surface to-background text-text">
       <Navbar />
-      <SliderBase />
+      <CartoonSlider />
 
       {/* Title */}
       <motion.h1
