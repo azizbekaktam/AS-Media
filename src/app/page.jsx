@@ -1,32 +1,32 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import MoviesPage from './Movies/page';
+import { useEffect } from 'react';
+import { MoviesPage } from '../route-pages/movies-page';
+import { useAuthContext } from '../features/authentication/auth-provider';
+import { LoadingSpinner } from '../shared/ui/loading-spinner';
 
 export default function Home() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [isAuth, setIsAuth] = useState(false); // token bormi yo‘qmi
+  const { user, loading } = useAuthContext();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.replace("/LoginPage"); // push emas replace ishlat
-    } else {
-      setIsAuth(true);
-      setLoading(false);
+    if (!loading && !user) {
+      router.replace("/LoginPage");
     }
-  }, [router]);
+  }, [user, loading, router]);
 
   if (loading) {
-return  }
-
-  if (!isAuth) {
-    return null; // redirect bo‘lguncha hech narsa ko‘rinmasin
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-neutral-950">
+        <LoadingSpinner text="Checking authentication..." />
+      </div>
+    );
   }
 
-  return (
-  <MoviesPage/>
-  );
+  if (!user) {
+    return null; 
+  }
+
+  return <MoviesPage />;
 }

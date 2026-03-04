@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "../features/authentication/auth-provider";
 
 // Font config
 const geistSans = Geist({
@@ -27,7 +28,7 @@ export const metadata = {
     siteName: "AsMedia",
     images: [
       {
-        url: "/asmedia-og.jpg", // agar logong bo‘lsa joylashtir
+        url: "/asmedia-og.jpg", // agar logong bo'lsa joylashtir
         width: 1200,
         height: 630,
         alt: "AsMedia Preview",
@@ -45,7 +46,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300`}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
