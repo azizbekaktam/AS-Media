@@ -28,45 +28,43 @@ export function MoviesPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setPage(parseInt(params.get('page')) || 1);
-    setSelectedCategory(params.get('category') ? parseInt(params.get('category')) : null);
   }, []);
 
   useEffect(() => {
-    async function fetchGenres() {
-      try {
-        const genres = await movieAPI.getGenres();
-        setCategories(genres);
-      } catch (error) {
-        console.error('Genres olishda xato:', error);
-      }
-    }
-    fetchGenres();
-  }, []);
-
-  useEffect(() => {
-    async function fetchMovies() {
+    const fetchMovies = async () => {
       try {
         setLoading(true);
-        let data;
+        const data = selectedCategory 
+          ? await movieAPI.getMoviesByCategory(selectedCategory, page)
+          : await movieAPI.getPopularMovies(page);
         
-        if (selectedCategory) {
-          data = await movieAPI.getMoviesByCategory(selectedCategory, page);
-        } else {
-          data = await movieAPI.getPopularMovies(page);
-        }
-
-        const filtered = (data.results || []).filter((m) => !blockedIds.includes(m.id));
-        setMovies(filtered);
-        setTotalPages(data.total_pages || 1);
-      } catch (err) {
-        console.error(err);
+        const filteredMovies = data.results.filter(movie => !blockedIds.includes(movie.id));
+        setMovies(filteredMovies);
+        setTotalPages(Math.min(data.total_pages, 500));
+      } catch (error) {
+        console.error('Error fetching movies:', error);
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     fetchMovies();
+  }, [page, selectedCategory]);
 
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await movieAPI.getMovieCategories();
+        setCategories(data.genres.slice(0, 8));
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
     router.replace(
       `/Movies?page=${page}${selectedCategory ? `&category=${selectedCategory}` : ''}`,
       undefined,
@@ -78,64 +76,97 @@ export function MoviesPage() {
   const nextPage = () => setPage((p) => Math.min(p + 1, totalPages));
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-neutral-950 via-neutral-900 to-black text-white">
+    <main className="bg-gradient min-h-screen">
       <Navbar />
 
-      <motion.h1
-        initial={{ opacity: 0, y: -10 }}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center text-4xl sm:text-5xl font-extrabold mt-10 mb-6 flex items-center justify-center gap-2 text-yellow-400"
+        className="container pt-24 pb-12"
       >
-        <MdMovie className="text-5xl sm:text-6xl" /> Kinolar
-      </motion.h1>
+        <div className="text-center mb-12">
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gradient mb-4 flex items-center justify-center gap-4"
+          >
+            <MdMovie className="text-5xl sm:text-6xl md:text-7xl" />
+            Kinolar
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-white/60 text-lg max-w-2xl mx-auto"
+          >
+            Eng sara kinolar va multfilmlar to'plami
+          </motion.p>
+        </div>
 
-      <div className="flex flex-wrap gap-3 justify-center mb-12 px-4 sm:px-6 lg:px-8">
-        <button
-          onClick={() => { setSelectedCategory(null); setPage(1); }}
-          className={`px-5 py-2 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 ${
-            selectedCategory === null
-              ? 'bg-yellow-400 text-black shadow-xl'
-              : 'bg-white/5 hover:bg-yellow-400 hover:text-black shadow-sm'
-          }`}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="flex flex-wrap gap-3 justify-center mb-12"
         >
-          Barchasi
-        </button>
-        {categories.map((cat) => (
           <button
-            key={cat.id}
-            onClick={() => { setSelectedCategory(cat.id); setPage(1); }}
-            className={`px-5 py-2 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 ${
-              selectedCategory === cat.id
-                ? 'bg-yellow-400 text-black shadow-xl'
-                : 'bg-white/5 hover:bg-yellow-400 hover:text-black shadow-sm'
+            onClick={() => { setSelectedCategory(null); setPage(1); }}
+            className={`btn-secondary ${
+              selectedCategory === null ? 'btn-primary' : ''
             }`}
           >
-            {cat.name}
+            Barchasi
           </button>
-        ))}
-      </div>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => { setSelectedCategory(cat.id); setPage(1); }}
+              className={`btn-secondary ${
+                selectedCategory === cat.id ? 'btn-primary' : ''
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </motion.div>
 
-      <MovieGrid movies={movies} loading={loading} />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <MovieGrid movies={movies} loading={loading} />
+        </motion.div>
 
-      <div className="flex justify-center items-center gap-4 mt-12 pb-12">
-        <button
-          onClick={prevPage}
-          disabled={page === 1}
-          className="p-3 bg-white/5 rounded-full disabled:opacity-40 hover:bg-yellow-400 hover:text-black transition-all duration-200"
-        >
-          <HiOutlineChevronDoubleLeft className="text-xl sm:text-2xl" />
-        </button>
-        <span className="text-yellow-400 font-bold text-lg sm:text-xl">
-          {page} / {totalPages}
-        </span>
-        <button
-          onClick={nextPage}
-          disabled={page === totalPages}
-          className="p-3 bg-white/5 rounded-full disabled:opacity-40 hover:bg-yellow-400 hover:text-black transition-all duration-200"
-        >
-          <HiOutlineChevronDoubleRight className="text-xl sm:text-2xl" />
-        </button>
-      </div>
+        {!loading && movies.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="flex-center gap-6 mt-16"
+          >
+            <button
+              onClick={prevPage}
+              disabled={page === 1}
+              className="btn-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <HiOutlineChevronDoubleLeft className="text-xl" />
+            </button>
+            
+            <div className="text-white font-bold text-xl min-w-[80px] text-center">
+              {page} / {totalPages}
+            </div>
+            
+            <button
+              onClick={nextPage}
+              disabled={page === totalPages}
+              className="btn-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <HiOutlineChevronDoubleRight className="text-xl" />
+            </button>
+          </motion.div>
+        )}
+      </motion.div>
     </main>
   );
 }

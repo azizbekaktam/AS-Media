@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { MoviesPage } from '../route-pages/movies-page';
 import { useAuthContext } from '../features/authentication/auth-provider';
 import { LoadingSpinner } from '../shared/ui/loading-spinner';
@@ -18,15 +19,29 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-neutral-950">
-        <LoadingSpinner text="Checking authentication..." />
+      <div className="bg-gradient min-h-screen flex-center">
+        <LoadingSpinner text="Tizim yuklanmoqda..." size="lg" />
       </div>
     );
   }
 
   if (!user) {
-    return null; 
+    return (
+      <div className="bg-gradient min-h-screen flex-center">
+        <LoadingSpinner text="Redirecting..." size="lg" />
+      </div>
+    );
   }
 
-  return <MoviesPage />;
+  return (
+    <div className="bg-gradient min-h-screen">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+      >
+        <MoviesPage />
+      </motion.div>
+    </div>
+  );
 }

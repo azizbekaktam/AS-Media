@@ -1,10 +1,11 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { FaTrash, FaHeart, FaThumbtack, FaUserCircle } from 'react-icons/fa';
+import { FaTrash, FaHeart, FaThumbtack, FaUserCircle, FaReply } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { commentAPI } from '../../entities/comment/api/comment-api';
 import { useAuthContext } from '../authentication/auth-provider';
 import { UserAvatar } from '../../entities/user/ui/user-avatar';
-import { GlassCard } from '../../shared/ui/glass-card';
 
 const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
 
@@ -17,110 +18,81 @@ export function CommentSection({ movieId }) {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!movieId) return;
+    const fetchComments = async () => {
+      try {
+        const fetchedComments = await commentAPI.getComments(movieId);
+        const sortedComments = fetchedComments.sort((a, b) => {
+          // Pinned comments first
+          if (a.pinned && !b.pinned) return -1;
+          if (!a.pinned && b.pinned) return 1;
+          // Then by date
+          return b.createdAt.toDate() - a.createdAt.toDate();
+        });
+        setComments(sortedComments);
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const unsubscribe = commentAPI.getComments(movieId, setComments);
-    setLoading(false);
-
-    return () => unsubscribe();
+    fetchComments();
   }, [movieId]);
 
   const handleAddComment = async () => {
-    if (!user || !newComment.trim()) {
-      if (!user) {
-        alert('Izoh qoldirish uchun avval tizimga kiring!');
-        return;
-      }
-      return;
-    }
+    if (!newComment.trim() || !user) return;
 
     try {
       setSubmitting(true);
-      await commentAPI.addComment(movieId, {
+      const comment = {
         text: newComment.trim(),
-        name: user.name || user.email.split('@')[0],
         uid: user.uid,
+        name: user.displayName || 'Anonymous',
         email: user.email,
-        photoURL: user.photoURL,
-        premium: user.plan === 'premium',
+        createdAt: new Date(),
         likes: [],
         pinned: false,
-        replies: [],
-      });
+        premium: user.plan === 'premium'
+      };
+
+      const addedComment = await commentAPI.addComment(movieId, comment);
+      setComments(prev => [addedComment, ...prev]);
       setNewComment('');
-    } catch (err) {
-      console.error('Add comment error:', err);
-      alert('Izoh qoldirishda xatolik yuz berdi.');
+    } catch (error) {
+      console.error('Error adding comment:', error);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleAddReply = async (commentId) => {
-    if (!user || !replyInputs[commentId]?.trim()) {
-      if (!user) {
-        alert('Javob yozish uchun avval tizimga kiring!');
-        return;
-      }
-      return;
-    }
-
-    try {
-      const comment = comments.find(c => c.id === commentId);
-      const replyData = {
-        uid: user.uid,
-        name: user.name || user.email.split('@')[0],
-        email: user.email,
-        photoURL: user.photoURL,
-        text: replyInputs[commentId].trim(),
-        createdAt: new Date(),
-      };
-      
-      await commentAPI.updateComment(commentId, {
-        replies: [...(comment?.replies || []), replyData],
-      });
-      setReplyInputs(prev => ({ ...prev, [commentId]: '' }));
-    } catch (err) {
-      console.error('Add reply error:', err);
-      alert('Javob yozishda xatolik yuz berdi.');
-    }
-  };
-
   const handleDelete = async (comment) => {
-    if (!user) return;
-
-    const isOwner = user.uid === comment.uid;
-    const isAdmin = user.role === 'admin';
-    const now = new Date();
-
-    if (!isOwner && !isAdmin) {
-      alert('Faqat admin yoki siz o\'chira olasiz!');
-      return;
-    }
-    
-    if (isOwner && !comment.premium && now - comment.createdAt > FIVE_DAYS_MS && !isAdmin) {
-      alert('Foydalanuvchi 5 kundan oshgan izohni o\'chira olmaydi!');
-      return;
-    }
+    if (!user || (user.uid !== comment.uid && user.role !== 'admin')) return;
 
     try {
-      await commentAPI.deleteComment(comment.id);
-    } catch (err) {
-      console.error('Delete comment error:', err);
-      alert('O\'chirishda xato!');
+      await commentAPI.deleteComment(movieId, comment.id);
+      setComments(prev => prev.filter(c => c.id !== comment.id));
+    } catch (error) {
+      console.error('Error deleting comment:', error);
     }
   };
 
   const toggleLike = async (comment) => {
-    if (!user) {
-      alert('Like qo\'shish uchun avval tizimga kiring!');
-      return;
-    }
+    if (!user) return;
 
     try {
       await commentAPI.likeComment(comment.id, user.uid);
-    } catch (err) {
-      console.error('Like error:', err);
+      setComments(prev => prev.map(c => 
+        c.id === comment.id 
+          ? { 
+              ...c, 
+              likes: c.likes?.includes(user.uid) 
+                ? c.likes.filter(uid => uid !== user.uid)
+                : [...(c.likes || []), user.uid]
+            }
+          : c
+      ));
+    } catch (error) {
+      console.error('Error liking comment:', error);
     }
   };
 
@@ -128,40 +100,74 @@ export function CommentSection({ movieId }) {
     if (user?.role !== 'admin') return;
     try {
       await commentAPI.pinComment(comment.id, !comment.pinned);
-    } catch (err) {
-      console.error('Pin error:', err);
+      setComments(prev => prev.map(c => 
+        c.id === comment.id ? { ...c, pinned: !c.pinned } : c
+      ));
+    } catch (error) {
+      console.error('Error pinning comment:', error);
+    }
+  };
+
+  const handleAddReply = async (commentId) => {
+    const replyText = replyInputs[commentId];
+    if (!replyText?.trim() || !user) return;
+
+    try {
+      const reply = {
+        text: replyText.trim(),
+        uid: user.uid,
+        name: user.displayName || 'Anonymous',
+        createdAt: new Date()
+      };
+
+      await commentAPI.addReply(movieId, commentId, reply);
+      setReplyInputs(prev => ({ ...prev, [commentId]: '' }));
+      setComments(prev => prev.map(c => 
+        c.id === commentId 
+          ? { ...c, replies: [...(c.replies || []), reply] }
+          : c
+      ));
+    } catch (error) {
+      console.error('Error adding reply:', error);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex-center py-12">
+        <div className="w-10 h-10 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="mt-6 max-w-3xl mx-auto">
-      <GlassCard className="p-4 mb-6">
+    <div className="max-w-4xl mx-auto mt-8">
+      {/* Add Comment Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="card mb-8"
+      >
         {user ? (
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <UserAvatar user={user} />
             <div className="flex-1">
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Izoh qoldiring..."
-                className="w-full p-3 rounded-lg bg-neutral-800/50 border border-neutral-700 text-white placeholder-neutral-400 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all resize-none"
+                className="input-primary w-full resize-none"
                 rows={3}
                 maxLength={500}
               />
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-xs text-neutral-400">{newComment.length}/500</span>
+              <div className="flex justify-between items-center mt-3">
+                <span className="text-white/60 text-sm">
+                  {newComment.length}/500
+                </span>
                 <button
                   onClick={handleAddComment}
                   disabled={!newComment.trim() || submitting}
-                  className="px-4 py-2 bg-yellow-400 text-black rounded-lg font-semibold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? 'Yuborilmoqda...' : 'Qo\'shish'}
                 </button>
@@ -169,68 +175,98 @@ export function CommentSection({ movieId }) {
             </div>
           </div>
         ) : (
-          <div className="text-center py-4">
-            <FaUserCircle className="w-12 h-12 mx-auto mb-3 text-neutral-400" />
-            <p className="text-neutral-400 mb-3">Izoh qoldirish uchun avval tizimga kiring</p>
+          <div className="text-center py-8">
+            <FaUserCircle className="w-16 h-16 mx-auto mb-4 text-white/40" />
+            <h3 className="text-xl font-semibold text-white mb-2">
+              Izoh qoldirish uchun tizimga kiring
+            </h3>
+            <p className="text-white/60">
+              Fikringizni boshqalar bilan ulashing
+            </p>
           </div>
         )}
-      </GlassCard>
+      </motion.div>
 
-      <div className="space-y-4">
+      {/* Comments List */}
+      <div className="space-y-6">
         {comments.length === 0 ? (
-          <div className="text-center py-8 text-neutral-400">
-            <FaHeart className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>Hozircha izohlar yo'q. Birinchi izohni siz qoldiring!</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-12"
+          >
+            <FaHeart className="w-16 h-16 mx-auto mb-4 text-white/40" />
+            <h3 className="text-xl font-semibold text-white mb-2">
+              Hozircha izohlar yo'q
+            </h3>
+            <p className="text-white/60">
+              Birinchi izohni siz qoldiring!
+            </p>
+          </motion.div>
         ) : (
           <AnimatePresence>
-            {comments.map((c) => (
+            {comments.map((comment) => (
               <motion.div
-                key={c.id}
+                key={comment.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className={`bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl p-4 ${c.pinned ? 'border-yellow-400/50' : ''}`}
+                transition={{ duration: 0.3 }}
+                className={`card ${comment.pinned ? 'ring-2 ring-yellow-400/50' : ''}`}
               >
-                <div className="flex justify-between items-start mb-3">
+                <div className="flex justify-between items-start mb-4">
                   <div className="flex items-start gap-3">
-                    <UserAvatar user={c} />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-white">
-                          {c.name} {c.pinned && '📌'}
-                        </p>
-                        {c.premium && <span className="text-xs bg-yellow-400 text-black px-2 py-1 rounded-full font-semibold">PRO</span>}
+                    <UserAvatar user={comment} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-white">
+                          {comment.name}
+                          {comment.pinned && (
+                            <span className="ml-2 text-yellow-400">📌</span>
+                          )}
+                        </h4>
+                        {comment.premium && (
+                          <span className="glass px-2 py-1 rounded text-xs text-yellow-400 font-bold">
+                            PRO
+                          </span>
+                        )}
                       </div>
-                      <p className="text-xs text-neutral-400">
-                        {c.email} • {c.createdAt.toLocaleString('uz-UZ')}
+                      <p className="text-white/60 text-sm">
+                        {comment.email} • {comment.createdAt.toLocaleDateString('uz-UZ')}
                       </p>
                     </div>
                   </div>
                   
                   <div className="flex gap-2">
                     <button 
-                      onClick={() => toggleLike(c)} 
+                      onClick={() => toggleLike(comment)} 
                       className={`flex items-center gap-1 transition-all hover:scale-110 ${
-                        c.likes?.includes(user?.uid) ? 'text-red-500' : 'text-neutral-400 hover:text-red-400'
+                        comment.likes?.includes(user?.uid) 
+                          ? 'text-red-500' 
+                          : 'text-white/40 hover:text-red-400'
                       }`}
                       disabled={!user}
                     >
-                      <FaHeart /> {c.likes?.length || 0}
+                      <FaHeart /> 
+                      <span className="text-sm">{comment.likes?.length || 0}</span>
                     </button>
-                    {(user?.uid === c.uid || user?.role === 'admin') && (
+                    
+                    {(user?.uid === comment.uid || user?.role === 'admin') && (
                       <button 
-                        onClick={() => handleDelete(c)} 
+                        onClick={() => handleDelete(comment)} 
                         className="text-red-500 hover:text-red-400 transition-all hover:scale-110"
                       >
                         <FaTrash />
                       </button>
                     )}
+                    
                     {user?.role === 'admin' && (
                       <button 
-                        onClick={() => togglePin(c)} 
+                        onClick={() => togglePin(comment)} 
                         className={`transition-all hover:scale-110 ${
-                          c.pinned ? 'text-yellow-400' : 'text-neutral-400 hover:text-yellow-300'
+                          comment.pinned 
+                            ? 'text-yellow-400' 
+                            : 'text-white/40 hover:text-yellow-300'
                         }`}
                       >
                         <FaThumbtack />
@@ -239,44 +275,63 @@ export function CommentSection({ movieId }) {
                   </div>
                 </div>
 
-                <p className="text-neutral-200 mb-3 leading-relaxed">{c.text}</p>
+                <p className="text-white/90 mb-4 leading-relaxed">
+                  {comment.text}
+                </p>
 
-                {(c.replies && c.replies.length > 0) && (
-                  <div className="ml-12 space-y-2 mb-3">
-                    {c.replies.map((r, i) => (
-                      <div key={i} className="flex items-start gap-2 p-2 bg-neutral-800/30 rounded-lg">
-                        <UserAvatar user={r} size="sm" />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-white">{r.name}</p>
-                            <p className="text-xs text-neutral-400">
-                              {new Date(r.createdAt.seconds ? r.createdAt.toDate() : r.createdAt).toLocaleDateString('uz-UZ')}
+                {/* Replies */}
+                {(comment.replies && comment.replies.length > 0) && (
+                  <div className="ml-16 space-y-3 mb-4">
+                    {comment.replies.map((reply, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="glass-sm p-3 rounded-xl"
+                      >
+                        <div className="flex items-start gap-2">
+                          <UserAvatar user={reply} size="sm" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h5 className="text-sm font-medium text-white">
+                                {reply.name}
+                              </h5>
+                              <span className="text-white/60 text-xs">
+                                {new Date(reply.createdAt.seconds ? reply.createdAt.toDate() : reply.createdAt).toLocaleDateString('uz-UZ')}
+                              </span>
+                            </div>
+                            <p className="text-white/80 text-sm">
+                              {reply.text}
                             </p>
                           </div>
-                          <p className="text-sm text-neutral-300">{r.text}</p>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 )}
 
+                {/* Reply Input */}
                 {user && (
-                  <div className="ml-12 flex gap-2">
+                  <div className="ml-16 flex gap-2">
                     <UserAvatar user={user} size="sm" />
                     <input
                       type="text"
-                      value={replyInputs[c.id] || ''}
-                      onChange={(e) => setReplyInputs(prev => ({ ...prev, [c.id]: e.target.value }))}
+                      value={replyInputs[comment.id] || ''}
+                      onChange={(e) => setReplyInputs(prev => ({ 
+                        ...prev, 
+                        [comment.id]: e.target.value 
+                      }))}
                       placeholder="Javob yozing..."
-                      className="flex-1 p-2 rounded-lg bg-neutral-800/50 border border-neutral-700 text-white placeholder-neutral-400 text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all"
+                      className="input-primary flex-1 text-sm"
                       maxLength={200}
                     />
                     <button
-                      onClick={() => handleAddReply(c.id)}
-                      disabled={!replyInputs[c.id]?.trim()}
-                      className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      onClick={() => handleAddReply(comment.id)}
+                      disabled={!replyInputs[comment.id]?.trim()}
+                      className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2"
                     >
-                      Javob
+                      <FaReply className="text-sm" />
                     </button>
                   </div>
                 )}
